@@ -1,0 +1,634 @@
+/* ============================================================================
+   Orphée — « Moi » (accueil v3, PM-18). Maquette validée par le PM.
+   ============================================================================ */
+
+/* overflow-x: clip — rien dans « Moi » ne doit élargir la page sur mobile
+   (Chrome/Brave Android élargissent alors toute la mise en page). */
+#view-moi.is-active { max-width: 720px; overflow-x: clip; }
+
+/* Une seule grammaire pour tous les blocs (v2.12.0) — cinq briques :
+   - Bloc : un titre (.moi-h), une ligne qui dit ce qu'il montre (.moi-lede),
+     un trait fin et le même espace entre deux blocs ;
+   - Ligne d'album (.moi-row) : listes courtes (moments, albums d'un trimestre) ;
+   - Exemples (.moi-ex) : 3 pochettes titrées + « Voir les N » → le bac ;
+   - Visage (.moi-face) : un artiste, photo ou initiales sur fond neutre ;
+   - Carte d'action (.moi-qz) : seul cadre, seulement là où l'on agit.
+   Quatre tailles de texte : 24 (phrase-titre, sous un surtitre), 19 (titres), 15 (éléments), 13
+   (détails). La couleur ne dit qu'une note ou une humeur ; le vert, les
+   actions et les données. */
+.moi { display: flex; flex-direction: column; padding-bottom: 32px; }
+.moi > * + * { margin-top: 28px; }
+.moi-sec + .moi-sec { padding-top: 26px; border-top: 1px solid var(--border); }
+.moi-sec-head { margin-bottom: 14px; }
+/* Chapitre « Ce que tes notes racontent » (v2.44.2) : sous-blocs groupés. */
+.moi-chapter { display: flex; flex-direction: column; gap: 26px; }
+.moi-subh { margin-bottom: 2px; }
+.moi-sub-title { margin: 0; font-size: 16px; font-weight: 800; }
+.moi-sub-lede { margin: 3px 0 0; font-size: 12.5px; color: var(--muted); }
+.moi-tw-gold { color: var(--grade-5-bg, #e0a23f); }
+.moi-tw-blue { color: #5a9cdc; }
+.moi-sec-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+/* Lien discret d'en-tête (« Tout voir › ») : remplace les gros boutons. */
+.moi-link {
+  flex: none; display: inline-flex; align-items: center; gap: 2px;
+  min-width: 44px; height: 32px; margin: -6px 0; padding: 0 6px 0 12px;
+  border: 0; border-radius: 999px; background: var(--surface-2); cursor: pointer;
+  color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.moi-link svg { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.moi-link.icon { justify-content: center; padding: 0; }
+.moi-link:hover { background: var(--surface-3); }
+.moi-link:active { transform: scale(.97); }
+.moi-h { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); }
+/* Surtitre (v2.34.1) : le nom d'un bloc qui porte une phrase-titre. */
+.moi-sec-head.kicker { margin-bottom: 6px; }
+.moi-sec-head.kicker .moi-h {
+  font-size: var(--t-label, 12px); font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.moi-lede { margin: 4px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+
+/* En-tête : moi */
+.moi-me { display: flex; align-items: center; gap: 14px; padding-top: 6px; }
+.moi-me-av {
+  position: relative; flex: none; width: 64px; height: 64px; border-radius: 999px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--text); font-size: 20px; font-weight: 800;
+}
+.moi-me-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.moi-me-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.moi-me-name { font-size: 28px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moi-me-stats { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.moi-me-add {
+  align-self: flex-start; padding: 0; background: none; border: 0; cursor: pointer;
+  color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600;
+}
+.moi-title {
+  margin: 4px 0 0;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.moi-sub { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.moi-id .moi-title { margin-top: 0; }
+
+/* Territoires : genre · sous-genre dominant, part, artistes phares */
+.moi-terr { display: flex; flex-direction: column; gap: 18px; margin-top: 20px; }
+.moi-terr-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.moi-terr-name { font-size: 15px; font-weight: 600; }
+.moi-terr-pct { font-size: 13.5px; color: var(--muted); }
+/* Bloc en attente de la bibliothèque (v2.37.0) : sa place, qui respire. */
+.moi-skel { border-radius: 16px; background: var(--surface-2); animation: moi-skel 1.4s ease-in-out infinite; }
+@keyframes moi-skel { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .moi-skel { animation: none; } }
+/* Portrait (v2.36.1) : une barre pleine, segments aux couleurs des genres. */
+/* Cartes de genre (v2.44.1) : une par genre dominant, teintée de sa couleur,
+   avec les 3 visages de ses artistes phares. Pas de % (il est dans la barre). */
+.moi-gcards { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.moi-gcard {
+  padding: 16px 16px 18px; border-radius: 18px;
+  background: radial-gradient(130% 120% at 100% 0%, color-mix(in srgb, var(--g) 24%, var(--surface)), var(--surface) 62%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--g) 38%, transparent);
+}
+.moi-gcard-name { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 800; }
+.moi-gcard-name > i { width: 11px; height: 11px; border-radius: 3px; background: var(--g); flex: none; }
+.moi-gcard-sg { font-size: 13px; color: var(--muted); font-weight: 600; }
+.moi-gcard-body { display: flex; align-items: center; gap: 14px; margin-top: 14px; min-width: 0; }
+.moi-gcard .moi-face { width: 52px; height: 52px; font-size: 15px; border-width: 2px; border-color: var(--surface);
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--g) 48%, var(--surface-2)), var(--surface) 74%); }
+.moi-gcard .moi-face + .moi-face { margin-left: -16px; }
+.moi-gcard-names { min-width: 0; font-size: 14.5px; font-weight: 600; line-height: 1.3; color: var(--text); }
+.moi-gcard-name-btn { padding: 0; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.moi-gcard-name-btn:active { opacity: .7; }
+
+.moi-mix { display: flex; gap: 2px; height: 10px; margin-top: 22px; border-radius: 999px; overflow: hidden; }
+.moi-mix > span { min-width: 2px; }
+.moi-mix-legend { margin-top: 10px; }
+.moi-terr-name::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px;
+  border-radius: 2px; background: var(--dot, var(--accent)); vertical-align: 1px; }
+.moi-terr-bar { height: 6px; margin-top: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.moi-terr-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+
+/* Visages : les artistes d'un genre (ex-« Ceux qui me définissent ») */
+.moi-faces { display: flex; align-items: center; gap: 10px; margin-top: 8px; min-width: 0; }
+.moi-faces-stack { display: flex; flex: none; }
+.moi-face {
+  position: relative; overflow: hidden; flex: none; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 999px; border: 2px solid var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--text); font-size: 12px; font-weight: 800;
+}
+.moi-face + .moi-face { margin-left: -10px; }
+.moi-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.moi-faces-names { min-width: 0; font-size: 13.5px; line-height: 1.4; color: var(--muted); }
+.moi-face-name {
+  padding: 0; background: none; border: 0; color: inherit; font: inherit; cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--border-2); text-underline-offset: 3px;
+}
+.moi-face-name:hover { color: var(--text); }
+
+/* Ligne d'album */
+.moi-rows { display: flex; flex-direction: column; }
+.moi-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px;
+  padding: 8px 0; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.moi-row + .moi-row { border-top: 1px solid var(--border); }
+.moi-row-cover { width: 52px; height: 52px; flex: none; border-radius: 8px; overflow: hidden; }
+.moi-row-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.moi-row-txt > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moi-row-kicker { font-size: 12px; font-weight: 600; color: var(--muted); }
+.moi-row-title { font-size: 17px; font-weight: 600; }
+.moi-row-sub { font-size: 13.5px; color: var(--muted); }
+.moi-row-metric {
+  flex: none; padding: 4px 9px; border-radius: 999px; background: var(--surface-2);
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+
+/* Exemples (Adorés, paradoxes) */
+.moi-ex { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.moi-ex-tile {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  padding: 0; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.moi-ex-cover { width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; margin-bottom: 4px; }
+.moi-ex-title, .moi-ex-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moi-ex-title { font-size: 15px; font-weight: 600; }
+.moi-ex-meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.moi-ex-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 999px; vertical-align: 1px; }
+
+/* « Mes écoutes par… » : le graphique intégré, avec la grammaire des blocs. */
+.moi .moi-ecoutes.st-section { padding: 26px 0 0; }
+.moi-ecoutes .st-seg { margin-bottom: 14px; } /* onglets : .o-seg (components.css) */
+.moi-ecoutes .st-ecoutes-hero { align-items: baseline; }
+.moi-ecoutes .st-bignum { flex-direction: row; align-items: baseline; }
+.moi-ecoutes .st-bignum .k-stat { font-size: 22px; font-weight: 800; }
+.moi-ecoutes .st-bignum-unit, .moi-ecoutes .st-peak-lab { margin: 0; font-family: inherit; font-size: 13.5px; color: var(--muted); }
+.moi-ecoutes .st-axis-x { font-family: inherit; font-size: 10px; }
+
+/* Journée refondue (v2.46.0, PM-18/ADR-050) : phrase « deux pics » + les
+   signatures de créneau (genres + artistes sur-représentés). */
+.st-phrase {
+  margin: 2px 2px 10px; font-size: 17px; font-weight: 600;
+  line-height: 1.35; color: var(--text);
+}
+.st-phrase[hidden] { display: none; }
+.st-phrase b { color: var(--accent-hi); }
+.st-sig-head { margin: 14px 2px 10px; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.st-sig { background: var(--surface); border-radius: 16px; padding: 6px 16px; }
+.st-sig-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.st-sig-row:last-child { border-bottom: 0; }
+.st-sig-mo { flex: 0 0 68px; display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 14.5px; }
+.st-sig-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--accent-hi); }
+.st-sig-dot.d-nuit { background: var(--green-5); }
+.st-sig-who { flex: 1; min-width: 0; font-size: 14px; line-height: 1.4; }
+.st-sig-gen { color: var(--accent-hi); font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+.st-sig-art { color: var(--muted); }
+
+/* Retour vers « Moi » depuis Réglages (hors barre d'onglets). */
+.view-back {
+  display: inline-flex; align-items: center; height: 44px; margin: 0 0 8px -6px;
+  padding: 0 6px; background: none; border: 0;
+  color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.view-back:hover { color: var(--text); }
+
+@media (min-width: 900px) {
+  .moi-title { font-size: 32px; }
+}
+
+/* Mes années (v2.15.0) — une ligne par année. Échelle de tailles :
+   16 (année, sur la pochette) › 15 (humeur et écart) › 13 (album) ›
+   12 (détails). Un seul interlignage, un seul écart. */
+.moi-yrs { display: flex; flex-direction: column; }
+.moi-yr {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px;
+  padding: 8px 0; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.moi-yr[hidden] { display: none; }
+.moi-yr + .moi-yr, .moi-yr-detail + .moi-yr { border-top: 1px solid var(--border); }
+/* L'année en grand, à gauche : c'est le repère de la ligne. */
+.moi-yr-y {
+  flex: none; width: 58px; font-size: 24px; font-weight: 800; line-height: 1;
+  letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums;
+}
+.moi-yr-cov { position: relative; flex: none; width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.moi-yr-bar { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 4px; }
+.moi-yr-txt { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.moi-yr-l1, .moi-yr-l2, .moi-yr-l3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
+.moi-yr-l1 { font-size: 15px; font-weight: 700; }
+.moi-yr-l1.habit { color: var(--muted); font-weight: 600; }
+.moi-yr-delta { font-size: 13.5px; font-weight: 500; color: var(--text); }
+.moi-yr-l2 { font-size: 13.5px; font-weight: 500; }
+.moi-yr-x { font-weight: 400; color: var(--muted); }
+.moi-yr-l3 { font-size: 12px; color: var(--dim); }
+.moi-yr-wip { color: inherit; } /* « en cours » : gris, comme le reste de la ligne (v2.28.1) */
+.moi-yr-ch { color: var(--muted); font-weight: 600; }
+.moi-yr-detail { margin: 4px 0 14px 70px; }
+.moi-q-chips { display: flex; gap: 6px; }
+.moi-q-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+  border: 1px solid var(--border-2); border-radius: 999px; background: none;
+  color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.moi-q-chip.on { background: var(--surface-2); color: var(--text); border-color: var(--text); }
+.moi-q-chip:disabled { opacity: .35; cursor: default; }
+.moi-q-chip-dot { width: 8px; height: 8px; border-radius: 999px; }
+@media (max-width: 420px) { .moi-yr-detail { margin-left: 0; } }
+
+/* Détail du trimestre : pas de cadre */
+.moi-q-detail { margin-top: 14px; }
+.moi-q-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.moi-q-card-head .moi-ch-title { margin: 0; }
+.moi-q-card-head .moi-q-badge { flex: none; margin-top: 2px; }
+.moi-q-meta { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
+.moi-q-badge {
+  flex: none; padding: 5px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; color: #0a0c0b;
+}
+.moi-q-rows { margin-top: 10px; }
+.moi-q-actions { display: flex; gap: 8px; margin-top: 12px; }
+.moi-ghost {
+  flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: 10px;
+  background: none; color: var(--accent-hi); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.moi-ghost.on { background: var(--surface-2); }
+.moi-ghost:disabled { opacity: .7; cursor: progress; }
+.moi-q-desc { margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.moi-q-facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.moi-q-fact {
+  padding: 5px 10px; border-radius: 999px; background: var(--surface-2);
+  font-size: 12px; font-weight: 500; color: var(--text);
+}
+/* Netteté du portrait (PM-23) */
+.moi-sharp { margin-top: 14px; }
+.moi-sharp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.moi-sharp-label { font-size: 13.5px; font-weight: 700; }
+.moi-sharp-hint { font-size: 12px; color: var(--dim); }
+.moi-sharp-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hi));
+  transition: width .6s;
+}
+
+/* À qualifier (PM-22) */
+.moi-qz {
+  padding: 16px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border-2);
+}
+.moi-qz-head { display: flex; justify-content: space-between; align-items: baseline; }
+.moi-qz-title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.moi-qz-count { font-size: 12px; color: var(--muted); }
+.moi-qz-album {
+  display: flex; gap: 12px; align-items: center; width: 100%; margin-top: 12px;
+  padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.moi-qz-cover { width: 72px; height: 72px; flex: none; border-radius: 10px; overflow: hidden; }
+.moi-qz-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.moi-qz-name { font-size: 17px; font-weight: 700; line-height: 1.15; }
+.moi-qz-artist { font-size: 13.5px; color: var(--muted); }
+.moi-qz-reason { font-size: 13.5px; color: #e0a23f; }
+.moi-qz-grades { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.moi-qz-grade {
+  height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 0; border-radius: 10px; font: inherit; cursor: pointer;
+}
+.moi-qz-grade:disabled { opacity: .5; cursor: progress; }
+.moi-qz-grade-n { font-size: 16px; font-weight: 800; }
+.moi-qz-grade-l { font-size: 10px; font-weight: 600; }
+.moi-qz-skip {
+  display: block; margin: 8px auto 0; height: 36px; padding: 0 12px;
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 13.5px; cursor: pointer;
+}
+.moi-qz-error { margin: 8px 0 0; font-size: 13.5px; color: #ff8a7a; }
+.moi-qz-impact { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--bg); }
+.moi-qz-line { margin: 0 0 6px; font-size: 15px; line-height: 1.35; }
+.moi-qz-hint { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+.moi-qz-link {
+  padding: 0; background: none; border: 0; color: var(--accent-hi);
+  font: inherit; font-size: 13.5px; font-weight: 700; text-decoration: underline; cursor: pointer;
+}
+.moi-qz-next {
+  width: 100%; height: 44px; margin-top: 10px; border: 0; border-radius: 10px;
+  background: var(--accent); color: #06251c; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+
+/* Chapitre dans la carte du trimestre */
+.moi-ch { margin-top: 12px; }
+.moi-ch-title { margin: 10px 0 0; font-size: 19px; font-weight: 800; line-height: 1.2; }
+.moi-ch-label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.moi-ch-row { display: flex; gap: 8px; }
+.moi-ch-input {
+  flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 12px;
+  background: var(--bg); border: 1px solid var(--border-2); border-radius: 10px;
+  color: var(--text); font: inherit; font-size: 15px;
+}
+.moi-ch-ok {
+  height: 44px; padding: 0 14px; border: 0; border-radius: 10px;
+  background: var(--surface-2); color: var(--accent-hi); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.moi-ch-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.moi-ch-btn {
+  min-height: 40px; padding: 0 12px; border: 1px dashed var(--border-2); border-radius: 10px;
+  background: transparent; color: var(--muted); font: inherit; font-size: 13.5px; cursor: pointer;
+}
+.moi-ch-del { border-style: solid; }
+
+/* Récit d'Orphée (PM-25) */
+.moi-story-box { margin-top: 14px; padding: 2px 0 2px 12px; border-left: 2px solid var(--accent); }
+.moi-story-text { margin: 0; font-size: 15px; line-height: 1.55; font-style: italic; color: #dfe5e1; }
+.moi-story-text em { font-style: normal; font-weight: 700; }
+
+/* Réglages : migration coups de cœur → Adoré (fusion.js) */
+.fusion-list { list-style: none; margin: 12px 0; padding: 0; max-height: 260px; overflow-y: auto; }
+.fusion-item {
+  display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: 13.5px;
+}
+.fusion-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fusion-grade { flex: none; color: var(--muted); }
+.fusion-go { width: 100%; }
+.fusion-error { color: #ff8a7a; }
+
+/* Classer un artiste (PM-21) */
+.moi-cz-tiles { margin-top: 14px; }
+.moi-cz-name {
+  display: block; margin: 10px 0 2px; padding: 0; background: none; border: 0;
+  color: var(--text); font: inherit; font-size: 17px; font-weight: 800; text-align: left; cursor: pointer;
+}
+
+/* Fiche artiste (PM-26) — par-dessus l'écran, sous la fiche album (48/49) */
+.ar-scrim {
+  position: fixed; inset: 0; z-index: 44; background: rgba(0, 0, 0, .55);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.ar-scrim.open { opacity: 1; pointer-events: auto; }
+.ar-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 45;
+  max-width: 720px; margin: 0 auto; overflow: hidden;
+  background: var(--bg); transform: translateY(100%); transition: transform .28s var(--ease, ease);
+}
+.ar-sheet.open { transform: translateY(0); }
+.ar-sheet:not(.open) { box-shadow: none; }
+.ar-sheet.parked, .ar-sheet.under { visibility: hidden; }
+.ar-sheet.animating { will-change: transform; }
+/* Le contenu défile dans la coque, jamais transformé (fiche album, idem). */
+.ar-scroll {
+  position: relative; height: 100%; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+}
+body.ar-open { overflow: hidden; }
+.ar-top { position: sticky; top: 0; z-index: 2; padding: 10px 12px; background: none;
+  display: flex; align-items: center; justify-content: space-between; }
+.ar-top-pad { width: 40px; }
+.ar-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border-2); cursor: grab; touch-action: none; }
+/* Téléphone : une carte comme la fiche album (v2.23.5) — 90 % de l'écran,
+   arrondie, plein écran une fois agrandie. */
+@media (max-width: 767px) {
+  .ar-sheet {
+    top: auto; height: 90vh; height: 90dvh; border-radius: 22px 22px 0 0;
+    border-top: 1px solid var(--border-2); box-shadow: 0 -20px 60px rgba(0, 0, 0, .55);
+    transition: transform .28s var(--ease, ease), height .3s var(--ease, ease), border-radius .3s var(--ease, ease);
+  }
+  .ar-sheet.expanded { height: 100vh; height: 100dvh; border-radius: 0; }
+  .ar-top { border-radius: 22px 22px 0 0; }
+}
+@media (min-width: 768px) {
+  .ar-handle { visibility: hidden; }
+  /* PC (v2.31.2) : une fenêtre posée au centre, sous la barre du haut. */
+  .ar-sheet { top: 76px; bottom: 24px; border-radius: 22px; transform: translateY(calc(100% + 60px));
+    border: 1px solid var(--border-2); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+}
+/* Fond de l'en-tête (v2.31.3), comme la fiche album : teinte du genre qui
+   se fond dans le noir. */
+.ar-herobg {
+  position: absolute; left: 0; right: 0; top: 0; height: 360px; pointer-events: none;
+  opacity: .55; transition: background .4s;
+}
+/* Fondu vers le noir par un dégradé, pas un masque (mask-image faisait
+   déborder la fiche artiste à travers l'album sur Chrome Android, v2.32.2). */
+.ar-herobg::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(transparent 35%, var(--bg));
+}
+.ar-hero, .ar-body { position: relative; }
+.ar-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 20px 18px; text-align: center; }
+.ar-pic {
+  width: 132px; height: 132px; border-radius: 999px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3); font-size: 36px; font-weight: 800; color: var(--text);
+}
+.ar-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ar-name { margin: 8px 0 0; font-size: 28px; font-weight: 800; line-height: 1.1; }
+.ar-meta { margin: 0; font-size: 15px; color: var(--muted); }
+.ar-body { padding: 0 20px 40px; }
+.ar-label { margin: 22px 0 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.ar-genre { display: block; }
+.ar-albums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
+.ar-album {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0;
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.ar-cover { aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; }
+.ar-album-title { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-album-meta { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-quarters { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Fiche artiste : courbe et « Souvent avec » (v2.41.0) */
+.ar-curve { max-width: 340px; margin: 14px auto 0; }
+.ar-curve svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ar-curve rect { fill: var(--surface-3); }
+.ar-curve rect.on { fill: var(--accent); }
+.ar-curve text { fill: var(--dim); font-size: 10px; font-family: var(--font-sans); }
+.ar-sub { margin: -4px 0 6px; font-size: var(--t-sub, 13.5px); color: var(--muted); }
+.ar-with { display: flex; flex-direction: column; }
+.ar-with-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ar-with-row + .ar-with-row { border-top: 1px solid var(--border); }
+.ar-with-face { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--surface-2); font-weight: 800; font-size: 14px; }
+.ar-with-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ar-with-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ar-with-t b { font-size: var(--t-text, 15px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-with-t small { font-size: var(--t-label, 12px); color: var(--muted); }
+.ar-with-bar { flex: none; width: 64px; height: 6px; border-radius: 9px; background: var(--surface-2); overflow: hidden; }
+.ar-with-bar i { display: block; height: 100%; background: var(--accent); }
+.ar-with-go { color: var(--muted); }
+/* Explorer tes mondes (v2.48.0, PM-40). */
+.ar-explore { display: block; width: 100%; margin-top: 10px; padding: 12px;
+  border: 1px solid var(--border-2); border-radius: 12px; background: var(--surface-2);
+  color: var(--text); font: inherit; font-weight: 700; font-size: var(--t-text, 15px);
+  cursor: pointer; }
+.ar-explore:active { background: var(--surface-3); }
+/* À part (v2.36.0) : singles, remix, lives — une liste, pas des albums. */
+.ar-apart { display: flex; flex-direction: column; }
+.ar-apart-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "t go" "m go";
+  column-gap: 12px; padding: 10px 0; min-height: 44px; color: var(--text); text-decoration: none; }
+.ar-apart-row + .ar-apart-row { border-top: 1px solid var(--border); }
+.ar-apart-t { grid-area: t; font-size: var(--t-text, 15px); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-apart-m { grid-area: m; font-size: var(--t-label, 12px); color: var(--muted); }
+.ar-apart-go { grid-area: go; align-self: center; color: var(--muted); }
+@media (min-width: 900px) { .ar-albums { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+/* À faire (lot 2) : une carte, deux gestes */
+/* Noter / Classer : onglets communs (.o-seg) ; un peu plus serrés ici. */
+.moi-todo-switch > button { height: 32px; padding: 0 12px; font-size: 13.5px; }
+
+/* « Plus tard » (PM-34) à côté de « Passer » */
+.moi-qz-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.moi-qz-foot .moi-qz-skip { margin: 0; }
+.moi-qz-later { display: inline-flex; align-items: center; gap: 6px; color: #e0a23f; font-weight: 600; }
+.moi-qz-later:disabled { opacity: .5; }
+
+/* Une question sur la pile « Mis de côté » (PM-36) */
+.moi-ask {
+  display: flex; gap: 14px; align-items: flex-start; padding: 14px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(224, 162, 63, .14), transparent 70%), var(--surface);
+  border: 1px solid rgba(224, 162, 63, .35);
+  transition: opacity .2s, transform .2s;
+}
+.moi-ask.out { opacity: 0; transform: translateX(24px); }
+.moi-ask-cover {
+  width: 64px; height: 64px; flex: none; border-radius: 10px; overflow: hidden;
+  padding: 0; border: 0; background: var(--surface-2); cursor: pointer;
+}
+.moi-ask-body { min-width: 0; }
+.moi-ask-q { margin: 0; font-size: 15px; line-height: 1.35; }
+.moi-ask-q b { font-weight: 700; }
+.moi-ask-artist { display: block; margin-top: 2px; font-size: 13.5px; color: var(--muted); }
+.moi-ask-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.moi-ask-btn {
+  height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--surface-2); color: var(--text); font: inherit; font-size: 15px; font-weight: 600;
+}
+.moi-ask-btn.main { background: #e0a23f; color: #241804; }
+.moi-ask-btn:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { .moi-ask { transition: none; } }
+
+/* Bouton sous un bloc (v2.28.0) : voir tout, déplier — bien visible, calme. */
+.moi-more {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; height: 44px; margin-top: 14px; border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--surface-2); color: var(--text); font: inherit; font-size: 15px; font-weight: 600;
+  transition: transform .15s cubic-bezier(.34, 1.56, .64, 1), background .2s;
+}
+.moi-more:active { transform: scale(.98); background: var(--surface-3); }
+.moi-more b { color: var(--accent-hi); font-variant-numeric: tabular-nums; }
+.moi-more svg { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+.moi-more.open svg { transform: rotate(180deg); }
+
+/* Fulgurance d'une année (un artiste qui explose) : en or, comme Adoré. */
+.moi-fulg { color: var(--grade-5-bg, #e0a23f); font-weight: 700; }
+
+/* Modifier le chapitre (v2.29.0) : titre puis description, l'un sous l'autre. */
+.moi-ch .moi-ch-input { display: block; width: 100%; flex: none; }
+.moi-ch .moi-ch-label + .moi-ch-desc, .moi-ch .moi-ch-input + .moi-ch-label { margin-top: 12px; }
+.moi-ch-desc {
+  display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical;
+  background: var(--bg); border: 1px solid var(--border-2); border-radius: 10px;
+  color: var(--text); font: inherit; font-size: 15px; line-height: 1.5;
+}
+.moi-ch > .moi-ch-ok { display: block; width: 100%; margin-top: 12px; background: var(--accent); color: #06251c; }
+
+/* Genres dans le temps (v2.33.0, PM-19) — moi-genres.js, en tête de
+   « Mes années ». Volume au-dessus, parts dessous, légende dynamique. */
+.gf { --gf-other: #3a443e; margin: 4px 0 18px; }
+.gf .gf-title { margin: 0 0 14px; }
+.moi-sec-head.kicker + .gf { margin-top: 0; }
+.gf-chart { margin-top: 2px; }
+.gf svg { display: block; width: 100%; overflow: visible; }
+.gf-band { margin-bottom: 6px; }
+.gf-vol { fill: #5a625d; transition: fill .2s; }
+.gf-vol.on { fill: var(--text); }
+.gf-hit { cursor: pointer; }
+.gf-break { stroke: var(--dim); stroke-width: 1.5; stroke-dasharray: 2 4; }
+.gf-year { fill: var(--muted); font-size: 12px; font-family: var(--font-sans); }
+.gf-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 13.5px; color: var(--muted); }
+.gf-lh { width: 100%; font-weight: 600; color: var(--muted); }
+.gf-lh.on { color: var(--text); }
+.gf-li { display: inline-flex; align-items: center; gap: 6px; }
+.gf-li i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.gf-li em { font-style: normal; color: var(--text); font-variant-numeric: tabular-nums; }
+.gf-more { margin-top: 18px; gap: 6px; }
+.gf-more svg { width: 16px !important; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.gf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 12px; }
+.gf-sub-title { margin: 0 0 12px; font-size: var(--t-block, 19px); font-weight: 800; line-height: 1.2; }
+
+/* Un seul titre (v2.34.0) : focus sur la chanson — titre en grand, ce qui
+   la rend exceptionnelle à droite (×N un titre moyen, en or), sa part de
+   l'album en barre. */
+.moi-one-rows { display: flex; flex-direction: column; }
+.moi-one-row { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 0; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer; }
+.moi-one-row:last-child { border-bottom: 0; }
+.moi-one-cover { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; }
+.moi-one-txt { display: flex; flex-direction: column; min-width: 0; }
+.moi-one-track { font-size: var(--t-item, 17px); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moi-one-sub { font-size: var(--t-sub, 13.5px); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moi-one-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.moi-one-bar { flex: 1; display: block; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.moi-one-pc { flex: none; font-size: var(--t-label, 12px); color: var(--muted); }
+.moi-one-bar i { display: block; height: 100%; border-radius: 2px; background: #e0a23f; }
+.moi-one-m { display: flex; flex-direction: column; align-items: flex-end; }
+.moi-one-m b { font-size: var(--t-block, 19px); font-weight: 800; color: #e0a23f; font-variant-numeric: tabular-nums; }
+.moi-one-m span { font-size: var(--t-label, 12px); color: var(--muted); white-space: nowrap; }
+
+/* ── Ces jours-ci (PM-39, ADR-050) — accroche en tête de « Moi » ───────────── */
+/* Pas de carte : le bloc coule comme les autres sections (filet du dessus
+   via .moi-sec + .moi-sec). Couleur = celle du genre ; le reste neutre. */
+.moi-days-kick {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.moi-days-title {
+  margin: 6px 0 2px; font-size: 23px; font-weight: 800;
+  letter-spacing: -0.01em; line-height: 1.2; color: var(--text);
+}
+.moi-days-genre { font-weight: 800; }            /* couleur posée en inline */
+.moi-days-who { color: var(--text); font-weight: 800; }
+.moi-days-meta { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.moi-days-spark { margin: 8px 0 2px; }
+.moi-days-spark svg { display: block; width: 100%; height: 76px; }
+.moi-days-spark rect.d { fill: var(--dim); }
+.moi-days-spark rect.d.now { fill: var(--accent); }     /* cette semaine : vert */
+.moi-days-wk {
+  display: block; text-align: right; color: var(--accent);
+  font-size: 11px; font-weight: 600; margin-top: 3px;
+}
+.moi-days-list { margin-top: 6px; }
+.moi-days-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 9px 0; border: 0; border-bottom: 1px solid var(--border);
+  background: none; color: var(--text); font: inherit; text-align: left;
+  cursor: pointer;
+}
+.moi-days-row:last-child { border-bottom: 0; }
+.moi-days-row .moi-face {
+  width: 40px; height: 40px; border-width: 0; cursor: pointer;
+}
+.moi-days-art {
+  flex: 1; font-weight: 600; font-size: 15px; color: var(--text);
+}
+.moi-days-n { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.moi-days-badge {
+  font-size: 11.5px; font-weight: 700; color: var(--accent-2);
+  background: var(--accent-2-dim); border-radius: 999px;
+  padding: 2px 8px; white-space: nowrap;
+}
+.moi-days-album {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  text-align: left; margin-top: 12px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--muted); font: inherit; font-size: 13.5px;
+}
+.moi-days-albtxt {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+}
+.moi-days-album b { color: var(--text); font-weight: 600; }
+.moi-days-albn { color: var(--muted); font-size: 12.5px; }
+.moi-days-albcov {
+  width: 56px; height: 56px; border-radius: 8px;
+  overflow: hidden; flex: 0 0 auto; background: var(--surface-2);
+}

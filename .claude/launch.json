@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "orphee-hosting",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["firebase", "serve", "--only", "hosting", "--port", "5050"],
+      "port": 5050
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+"use strict";
+// Garde-fous de commit (convention odyssee-dev).
+//  1. Changelog : bloque si une version « — en cours » est coincée entre deux
+//     versions datées (version livrée qu'on a oublié de dater).
+//  2. Tables de tags : bloque si la doc a dérivé de tags-spec.js (ADR-025).
+// Contournement exceptionnel : git commit --no-verify
+const fs = require("fs");
+const path = require("path");
+
+const PATH = "docs/CHANGELOG.md";
+let text;
+try {
+  text = fs.readFileSync(PATH, "utf8");
+} catch (_e) {
+  process.exit(0); // pas de changelog → rien à vérifier
+}
+
+// En-têtes de version, dans l'ordre du fichier (anté-chronologique : récent en haut)
+const RE = /^##\s+(v\S+)\s+—\s+(.+?)\s*$/;
+const heads = [];
+text.split(/\r?\n/).forEach((line, i) => {
+  const m = line.match(RE);
+  if (m) heads.push({ ver: m[1], suffix: m[2].trim(), line: i + 1 });
+});
+
+const isDated = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+const isEnCours = (s) => /en cours/i.test(s);
+
+const offenders = heads.filter((h, k) => {
+  if (!isEnCours(h.suffix)) return false;
+  const datedAbove = heads.slice(0, k).some((x) => isDated(x.suffix));
+  const datedBelow = heads.slice(k + 1).some((x) => isDated(x.suffix));
+  return datedAbove && datedBelow;
+});
+
+if (offenders.length) {
+  console.error("\n✖ CHANGELOG : version(s) livrée(s) encore marquée(s) « en cours » :");
+  offenders.forEach((o) =>
+    console.error(`  - ${o.ver} (ligne ${o.line}) — datée plus récente au-dessus ET datée plus ancienne en dessous`)
+  );
+  console.error("\nDate-la (YYYY-MM-DD) dans docs/CHANGELOG.md avant de committer.");
+  console.error("(Convention odyssee-dev. Contournement exceptionnel : git commit --no-verify)\n");
+  process.exit(1);
+}
+
+// 2. Tables de tags synchronisées avec la source unique (ADR-025).
+try {
+  const {run} = require(path.join(__dirname, "..", "functions", "gen-tags-doc"));
+  const stale = run({check: true});
+  if (stale.length) {
+    console.error(
+        "\n✖ Tables de tags désynchronisées de functions/src/chat/tags-spec.js :");
+    stale.forEach((f) => console.error(`  - ${f}`));
+    console.error(
+        "\nRégénère avec : npm --prefix functions run gen, puis re-stage.");
+    console.error("(ADR-025. Contournement exceptionnel : git commit --no-verify)\n");
+    process.exit(1);
+  }
+} catch (e) {
+  console.error(`\n✖ Vérif tables de tags impossible : ${e.message}\n`);
+  process.exit(1);
+}
+
+// 3. Référentiel des notes synchronisé avec la source unique (ADR-026).
+try {
+  const {run} = require(path.join(__dirname, "..", "functions", "gen-grades"));
+  const stale = run({check: true});
+  if (stale.length) {
+    console.error(
+        "\n✖ Référentiel des notes désynchronisé de functions/src/grades.js :");
+    stale.forEach((f) => console.error(`  - ${f}`));
+    console.error(
+        "\nRégénère avec : npm --prefix functions run gen, puis re-stage.");
+    console.error("(ADR-026. Contournement exceptionnel : git commit --no-verify)\n");
+    process.exit(1);
+  }
+} catch (e) {
+  console.error(`\n✖ Vérif référentiel des notes impossible : ${e.message}\n`);
+  process.exit(1);
+}
+
+process.exit(0);

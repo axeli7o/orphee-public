@@ -1,0 +1,137 @@
+/* Orphée · Composants uniques (v2.31.0) — « une fonction, un visage »
+   (planche validée par Axel le 2026-10-11). Chaque fonction a UNE apparence,
+   la même sur tous les écrans :
+   - .o-btn.main  : l'action du moment (une par écran) — vert, 48 px ;
+   - .o-btn.soft  : action secondaire — même taille, fond gris ;
+   - .o-link      : remettre à plus tard (Passer, Pas maintenant) — texte gris ;
+   - .o-chip      : choix parmi plusieurs — 40 px, cerclée de --c, pleine si .on ;
+   - .o-seg       : onglets dans un bloc ;
+   - .o-card      : bloc qui demande un geste — fond gris, sans cadre ;
+   - bandeau      : .toast et .q-toast, même pilule en bas d'écran.
+   Couleur = sens : vert = agir · or = à décider / mis de côté / Adoré ·
+   couleur d'une note ou d'un genre = cette note, ce genre. */
+
+.o-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 48px; padding: 0 20px; border: 0; border-radius: 14px; cursor: pointer;
+  font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.1; text-decoration: none;
+  transition: transform .15s cubic-bezier(.34, 1.56, .64, 1), background .2s, color .2s, opacity .2s;
+}
+.o-btn:active:not(:disabled) { transform: scale(.97); }
+.o-btn:disabled { opacity: .45; cursor: default; }
+.o-btn.main { background: var(--accent); color: #06251c; }
+.o-btn.soft { background: var(--surface-2); color: var(--text); }
+.o-btn.soft b { color: var(--accent-hi); font-variant-numeric: tabular-nums; }
+.o-btn.soft.on { background: var(--surface-3); }
+.o-btn.block { display: flex; width: 100%; }
+.o-btn small { display: block; font-size: 12.5px; font-weight: 500; opacity: .75; }
+.o-btn.stack { flex-direction: column; gap: 1px; height: auto; min-height: 48px; padding-top: 8px; padding-bottom: 8px; }
+
+.o-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: none; cursor: pointer;
+  color: var(--muted); font-family: inherit; font-size: 14px; font-weight: 600;
+}
+.o-link:active { background: var(--surface-2); }
+.o-link.gold { color: #e0a23f; }
+.o-link.danger { color: #ff8a7a; }
+
+.o-chip {
+  --c: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent);
+  transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), background .2s, color .2s, box-shadow .2s;
+}
+.o-chip:active:not(:disabled) { transform: scale(.95); }
+.o-chip.on { background: var(--c); color: #0b0d0c; box-shadow: none; }
+.o-chip:disabled { opacity: .45; cursor: default; }
+
+.o-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.o-seg > button {
+  height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--muted); font-family: inherit; font-size: 14px; font-weight: 500; white-space: nowrap;
+}
+.o-seg > button.on { background: var(--bg); color: var(--text); font-weight: 600; }
+
+.o-card { padding: 16px; border: 0; border-radius: 16px; background: var(--surface); }
+
+@media (prefers-reduced-motion: reduce) {
+  .o-btn, .o-chip { transition: none; }
+}
+
+/* Onglets du graphe : l'ancien curseur glissant n'a plus lieu d'être. */
+.o-seg .st-seg-thumb { display: none; }
+.o-seg { border: 0; }
+.o-seg > .st-seg-btn { flex: none; z-index: auto; }
+/* Mis de côté / Envie forte : pastilles dorées (or = mis de côté). */
+.dt-aside.o-chip { --c: #e0a23f; }
+
+/* Retour (v2.31.0) : sur téléphone, une carte se ferme en la tirant vers le
+   bas ou par le geste retour — pas de bouton « ← » (fiches album et
+   artiste). Gardé sur grand écran, où il n'y a pas de geste. */
+@media (max-width: 767px) {
+  .dt-top > .dt-iconbtn:first-child, .ar-top > .dt-iconbtn { visibility: hidden; pointer-events: none; }
+  .view-back { display: none; } /* Réglages : le geste retour suffit */
+}
+
+/* ---- Échelle typographique (v2.31.0) : 5 tailles, mêmes rôles partout ----
+   Titre d'écran ou de carte 28 · titre de bloc 19 · titre d'élément 17
+   (nom d'un album dans une carte ou une liste) · texte 15 · ligne sous un
+   titre 13,5 · étiquette 12. Exceptions voulues : le titre de l'album
+   sous sa pochette et les grands chiffres (affiches, pas des titres). */
+:root { --t-title: 28px; --t-block: 19px; --t-item: 17px; --t-text: 15px; --t-sub: 13.5px; --t-label: 12px; }
+/* Titre d'écran / de carte */
+.q-h1, .q-h2, .ar-name, .moi-me-name {
+  font-size: var(--t-title); font-weight: 800; letter-spacing: -.01em; line-height: 1.15;
+}
+/* Titre de bloc */
+.moi-h, .moi-qz-title, .moi-ch-title, .dt-seclabel, .ar-label, .stat-title, .st-title {
+  font-family: inherit; font-size: var(--t-block); font-weight: 800; letter-spacing: -.01em;
+  line-height: 1.2; color: var(--text); text-transform: none;
+}
+/* Ligne sous un titre */
+.moi-lede, .q-lead, .ar-meta { font-size: var(--t-sub); color: var(--muted); }
+/* Étiquette */
+.dt-secnote, .q-eyebrow, .moi-sharp-hint, .q-csub, .dt-inherit {
+  font-family: inherit; font-size: var(--t-label);
+}
+
+/* Réglages : des cartes comme les autres (fond gris, sans cadre). */
+.settings-card { border: 0; border-radius: 16px; }
+.settings-card + .settings-card, .settings-card + section { margin-top: 12px; }
+/* Réglages (v2.31.1) : une ligne d’état sous chaque geste, sans mode d’emploi. */
+.set-status-line { margin: 8px 0 0; }
+.set-status-line:empty { display: none; }
+#set-scrobbles { margin: 0; }
+#set-scrobbles .set-field { margin: 14px 0 0; }
+.settings-card > .set-field:last-child { margin-bottom: 0; }
+.set-account { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.set-account .settings-help { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-account .logout-btn { flex: none; width: auto; margin: 0 0 0 auto; padding: 0 6px; border: 0; }
+.settings-card > .set-field:has(+ .set-account) { margin-bottom: 0; }
+
+/* PC (v2.31.2) : les Réglages se centrent comme les autres écrans. */
+@media (min-width: 768px) {
+  #view-settings { max-width: 588px; }
+}
+
+/* Mes CD (v2.43.0, PM-38) : la galette, petite sœur du disque de la fiche
+   album (.dt-disc). Pastille « Dans tes CD » : grisée, allumée pour un CD. */
+.cd-mini {
+  display: inline-block; flex: none; width: 16px; height: 16px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #14141a 0 10%, rgba(20, 20, 26, 0) 11% 15%, #d6dcf0 16% 19%, rgba(0, 0, 0, 0) 20%),
+    conic-gradient(from 210deg, rgba(255, 255, 255, 0) 0deg, rgba(180, 215, 255, .85) 38deg, rgba(255, 255, 255, 0) 84deg,
+      rgba(255, 200, 240, .8) 150deg, rgba(255, 255, 255, 0) 200deg, rgba(200, 255, 230, .85) 268deg,
+      rgba(255, 255, 255, 0) 320deg, rgba(255, 245, 200, .8) 350deg, rgba(255, 255, 255, 0) 360deg),
+    radial-gradient(circle at 50% 50%, #eef1ff 0 30%, #b9c2da 56%, #98a2bd 74%, #cdd5e9 88%, #828bb0 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4);
+}
+.dt-cd.o-chip { --c: var(--accent); color: var(--dim, #5a625d); box-shadow: inset 0 0 0 1px var(--border-2); }
+.dt-cd .cd-mini { filter: grayscale(1) brightness(.5); transition: filter .3s; }
+.dt-cd.o-chip.on { color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); box-shadow: none; }
+.dt-cd.on .cd-mini { filter: none; }
+.dt-cd.o-chip:disabled { opacity: 1; }
+.dt-coverstage.dt-cd-edit { cursor: pointer; -webkit-tap-highlight-color: transparent; }

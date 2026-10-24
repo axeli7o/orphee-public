@@ -1,0 +1,2 @@
+# Forcer LF sur tous les fichiers texte — évite les erreurs ESLint linebreak-style sur Windows
+* text=auto eol=lf

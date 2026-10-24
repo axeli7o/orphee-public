@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+"use strict";
+// Garde-fou « remontée de couche » (ADR-032).
+//
+// Si un commit porte la SIGNATURE d'un impact sur une couche de référence
+// (firestore.rules, ou une ligne IM-x/PM-x) SANS modifier PRODUIT.md/MODELE.md,
+// il EXIGE un accusé « Remontée: … » dans le message. La machine ne juge pas la
+// remontée (humain) ; elle force la question au bon moment.
+// Contournement exceptionnel : git commit --no-verify
+const fs = require("fs");
+const path = require("path");
+const {execFileSync} = require("child_process");
+const {
+  detectSignals,
+  touchesReferenceLayer,
+  hasRemonteeAck,
+} = require(path.join(__dirname, "remontee.js"));
+
+const git = (args) => execFileSync("git", args, {encoding: "utf8"});
+
+try {
+  const msgPath = process.argv[2];
+  const message = msgPath ? fs.readFileSync(msgPath, "utf8") : "";
+
+  const files = git(["diff", "--cached", "--name-only"])
+      .split(/\r?\n/).filter(Boolean);
+
+  // Cas descendant assumé : le PM édite déjà la référence → pas de gate.
+  if (touchesReferenceLayer(files)) process.exit(0);
+
+  const diff = git(["diff", "--cached", "--unified=0"]);
+  const signals = detectSignals(diff, files);
+
+  if (signals.length && !hasRemonteeAck(message)) {
+    console.error(
+        "\n✖ Remontée de couche possible — signaux : " + signals.join(", "));
+    console.error(
+        "Ce commit porte la signature d'un impact Produit/Modèle, mais ne");
+    console.error("modifie ni PRODUIT.md ni MODELE.md.");
+    console.error("\nAjoute UNE ligne au message de commit :");
+    console.error(
+        "  Remontée: non — <pourquoi ça ne touche pas la référence>");
+    console.error(
+        "  Remontée: soumise   (soumise à Axel avant de committer)");
+    console.error(
+        "\n(ADR-032. Contournement exceptionnel : git commit --no-verify)\n");
+    process.exit(1);
+  }
+} catch (_e) {
+  // Fail-open : un garde-fou ne bloque pas un commit légitime sur une erreur
+  // interne (rebase, environnement git inhabituel…).
+  process.exit(0);
+}
+process.exit(0);

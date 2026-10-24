@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Cloud Storage (ADR-034) : écoutes partitionnées par année
+// (scrobbles/{YYYY}.ndjson.gz). Fermé à tous les clients : seules les
+// Functions (admin SDK) lisent et écrivent.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

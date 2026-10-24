@@ -1,0 +1,241 @@
+/* ============================================================================
+   Orphée — Barre d'onglets persistante (.tabnav)
+   Mobile  : barre EN BAS (icône + label), pouce-friendly.
+   Desktop : barre EN HAUT façon site web (≥900px) — wordmark à gauche,
+             onglets à droite, actif en pilule.
+   z-index 40 : sous le scrim/overlay du detail album (48/49), qui le recouvre.
+   ============================================================================ */
+
+:root {
+  --nav-h: 58px;     /* hauteur barre mobile (hors safe-area) */
+  --nav-h-d: 56px;   /* hauteur barre desktop */
+  --head-h: 46px;    /* hauteur en-tête commun mobile (hors encoche) */
+}
+
+/* ---- En-tête commun (lot 2) : marque · fraîcheur des données · réglages ---
+   z-index 39 : sous le mode feuillette (40), qui a sa propre barre. */
+.apphead {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 39;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--head-h) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 6px 0 16px;
+  background: rgba(10, 12, 11, 0.92);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.apphead-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.apphead-mark { display: inline-flex; width: 18px; height: 18px; color: var(--accent); }
+.apphead-mark svg { width: 18px; height: 18px; }
+.apphead-tools { display: flex; align-items: center; gap: 2px; }
+.apphead-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.apphead-sync:hover { color: var(--text); }
+.apphead-sync:disabled { cursor: progress; }
+.apphead-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.apphead-btn svg { width: 20px; height: 20px; }
+.apphead-btn:hover { color: var(--text); }
+
+#app-screen {
+  position: relative;
+}
+
+/* ---- La barre -------------------------------------------------------------*/
+.tabnav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(10, 12, 11, 0.92);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+}
+
+/* Marque (cachée sur mobile : la barre du bas ne montre que les onglets). */
+.tabnav-brand {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+}
+.tabnav-brand-mark {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+.tabnav-brand-mark svg { width: 22px; height: 22px; }
+.tabnav-brand-word {
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.tabnav-tabs {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+}
+
+.tabnav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  transition: color 0.14s var(--ease, ease);
+}
+.tabnav-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+.tabnav-ic svg { width: 23px; height: 23px; }
+.tabnav-lab { letter-spacing: 0.01em; }
+
+.tabnav-tab.on { color: var(--text); }
+.tabnav-tab.on .tabnav-ic { color: var(--accent); }
+/* Onglet IA (Le Salon) : accent même au repos, discret. */
+.tabnav-tab.ai .tabnav-ic { color: color-mix(in srgb, var(--accent) 70%, var(--muted)); }
+.tabnav-tab.ai.on .tabnav-ic { color: var(--accent); }
+
+/* ---- Dégagement du contenu sous/au-dessus de la barre ---------------------*/
+/* Mobile : pas de barre en haut → on dégage l'encoche, et on dégage la barre
+   du bas. */
+#app-screen {
+  padding-top: calc(var(--head-h) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Chat : la zone verrouillée tient entre l'encoche et la barre du bas.
+   min-height:0 est CRUCIAL : le min-height:100vh de base écraserait sinon
+   le height calc(), poussant le composer derrière la barre. */
+body.view-chat-active #app-screen,
+body.view-library-active #app-screen {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: calc(var(--head-h) + env(safe-area-inset-top, 0px));
+  min-height: 0;
+  height: calc(100dvh - var(--nav-h) - var(--head-h)
+    - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+}
+
+/* Le FAB recherche est remonté au-dessus de la barre dans library.css (qui se
+   charge après nav.css et gagnerait sinon la cascade). */
+
+/* ---- Desktop : barre EN HAUT façon site web ------------------------------ */
+@media (min-width: 900px) {
+  .tabnav {
+    top: 0;
+    bottom: auto;
+    height: var(--nav-h-d);
+    padding: 0 22px;
+    padding-bottom: 0;
+    align-items: center;
+    gap: 8px;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabnav-brand { display: inline-flex; }
+
+  /* L'en-tête commun se loge à droite de la barre d'onglets. */
+  .apphead {
+    left: auto;
+    right: 14px;
+    z-index: 41;
+    height: var(--nav-h-d);
+    padding: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: 0;
+  }
+  .apphead-brand { display: none; }
+
+  .tabnav-tabs {
+    flex: initial;
+    margin-left: 22px;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .tabnav-tab {
+    flex: initial;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .tabnav-tab .tabnav-ic { width: 19px; height: 19px; }
+  .tabnav-tab .tabnav-ic svg { width: 19px; height: 19px; }
+  .tabnav-tab:hover { color: var(--text); background: var(--surface); }
+  /* actif en pilule (cf. la maquette « Home ») */
+  .tabnav-tab.on {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  /* contenu sous la barre haute */
+  #app-screen {
+    padding-bottom: 0;
+    padding-top: var(--nav-h-d);
+  }
+  body.view-chat-active #app-screen,
+  body.view-library-active #app-screen {
+    padding-top: 0;
+    margin-top: var(--nav-h-d);
+    min-height: 0;
+    height: calc(100dvh - var(--nav-h-d));
+  }
+}

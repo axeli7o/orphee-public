@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0c0b">
+    <title>Orphée — aperçu</title>
+    <meta name="description" content="Aperçu d'Orphée, curateur musical personnel. Écrans réels sur données de démonstration.">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/preview/preview.css">
+  </head>
+  <body>
+    <header class="pv-head">
+      <div class="pv-brand"><span class="pv-spark">✦</span> Orphée</div>
+      <p class="pv-tag">Un curateur musical personnel. Aperçu sur données de démonstration — rien de réel.</p>
+    </header>
+
+    <main class="pv-stage">
+      <button class="pv-arrow pv-prev" id="pv-prev" aria-label="Écran précédent">‹</button>
+
+      <div class="pv-phone">
+        <div class="pv-notch"></div>
+        <div class="pv-screen" id="pv-screen">
+          <img id="pv-img" alt="" draggable="false">
+        </div>
+      </div>
+
+      <button class="pv-arrow pv-next" id="pv-next" aria-label="Écran suivant">›</button>
+    </main>
+
+    <section class="pv-caption">
+      <h2 id="pv-title"></h2>
+      <p id="pv-sub"></p>
+    </section>
+
+    <nav class="pv-dots" id="pv-dots" aria-label="Choisir un écran"></nav>
+
+    <footer class="pv-foot">
+      Écrans réels sur un jeu de données fictif · <a href="https://github.com/axeli7o/orphee-public">code source</a>
+      <br>Pochettes génériques pour la démo, par respect des droits d'auteur.
+    </footer>
+
+    <script src="/preview/preview.js"></script>
+  </body>
+</html>

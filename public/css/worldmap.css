@@ -1,0 +1,147 @@
+/* Orphée — « Tes mondes » (PM-40, ADR-052). Archipel plein écran. */
+
+.wm-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: radial-gradient(120% 90% at 50% 42%, #10130f, var(--bg) 78%);
+  display: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.wm-host.open { display: block; }
+body.wm-open { overflow: hidden; }
+
+.wm-hd {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 16px 16px 12px;
+  background: linear-gradient(var(--bg), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+.wm-kick { font-size: 12px; letter-spacing: 0.04em; color: var(--muted); }
+.wm-note { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+.wm-vp {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+/* Îles + ponts : calque transformé (zoom par scale). */
+.wm-world { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.wm-world svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.wm-isl {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1.5px solid;
+  cursor: pointer;
+}
+
+/* Membres (bulles + photos + noms) : calque à l'échelle de l'écran, positionné
+   en JS — jamais mis à l'échelle en bitmap, donc photos et noms NETS au zoom. */
+.wm-members { position: absolute; inset: 0; pointer-events: none; }
+.wm-node { position: absolute; transform: translate(-50%, -50%); }
+.wm-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #0a0c0b;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4);
+}
+.wm-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.wm-node.foc .wm-face { box-shadow: 0 0 0 3px var(--accent), 0 2px 7px rgba(0, 0, 0, 0.5); }
+.wm-nname {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 4px);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-shadow: 0 1px 4px #000, 0 0 3px #000;
+  opacity: var(--z, 0);
+}
+.wm-lab {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 5px #000, 0 0 3px #000;
+  pointer-events: none;
+  opacity: var(--iz, 1);
+}
+.wm-lab b { font-size: 13.5px; font-weight: 800; display: block; }
+.wm-lab small { font-size: 11px; color: var(--muted); }
+
+.wm-close {
+  position: absolute;
+  right: 14px;
+  bottom: 18px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 2;
+}
+
+.wm-ov {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(6, 8, 7, 0.72);
+  display: none;
+  align-items: flex-end;
+}
+.wm-ov.on { display: flex; }
+.wm-sheet {
+  width: 100%;
+  max-height: 70%;
+  background: var(--surface-2);
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 18px 16px 28px;
+  overflow: auto;
+}
+.wm-sheet h2 { font-size: 18px; font-weight: 800; }
+.wm-sub { font-size: 12.5px; color: var(--muted); margin: 3px 0 14px; }
+.wm-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wm-row + .wm-row { border-top: 1px solid var(--border); }
+.wm-dot {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #0a0c0b;
+  font-size: 11px;
+}
+.wm-row b { flex: 1; font-size: 14.5px; font-weight: 600; }
+.wm-row small { color: var(--muted); font-size: 12px; }

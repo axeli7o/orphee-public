@@ -1,0 +1,13 @@
+/* Police auto-hébergée (aucune requête vers Google Fonts : vie privée,
+   hors-ligne, démarrage). Bricolage Grotesque, police UNIQUE de l'app —
+   titres comme annotations (choix PM, v3). Variable : graisses 200→800 et
+   taille optique (opsz) en un fichier. Sous-ensemble latin (couvre le
+   français), Fontsource 5.3.0 — licence SIL OFL 1.1, cf. /fonts/OFL.txt. */
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('/fonts/bricolage-grotesque-latin-opsz.woff2') format('woff2-variations');
+}

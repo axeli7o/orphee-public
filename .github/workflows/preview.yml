@@ -1,0 +1,45 @@
+name: Préversion (lien de test)
+
+# Chaque PR qui touche l'interface est déployée sur un canal Hosting de test
+# (« essai », URL stable tant que le canal vit), pour l'essayer sur téléphone
+# avant fusion. Même Firestore / Functions que la prod : seule l'interface
+# change. Le domaine du canal doit figurer une fois dans Firebase Auth ›
+# Domaines autorisés pour que la connexion Google y fonctionne.
+
+on:
+  pull_request:
+    paths:
+      - 'public/**'
+      - 'firebase.json'
+
+concurrency:
+  group: preview-essai
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    # pas de secrets pour une PR venue d'un fork
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # firebase-tools figé et mis en cache : ~40 s d'installation évitées.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.fbt
+          key: firebase-tools-15.33.0-${{ runner.os }}
+      - name: Install firebase-tools
+        run: |
+          [ -x ~/.fbt/bin/firebase ] || npm install -g --prefix ~/.fbt firebase-tools@15.33.0
+          echo "$HOME/.fbt/bin" >> "$GITHUB_PATH"
+
+      - name: Deploy preview channel
+        run: |
+          firebase hosting:channel:deploy essai --expires 30d \
+            --project orphee-e7377 --token "$FIREBASE_TOKEN" --non-interactive --json > channel.json
+          URL=$(node -e "const r=require('./channel.json').result||{};const s=Object.values(r)[0]||{};console.log(s.url||'')")
+          echo "Lien de test : $URL"
+          echo "### Lien de test : $URL" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

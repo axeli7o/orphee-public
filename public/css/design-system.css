@@ -1,0 +1,349 @@
+/* ============================================================================
+   ODYSSÉE — Design System
+   Shared foundations + per-app themes for Zagreus, Ariane, Orphée.
+
+   USAGE
+   -----
+   1. Load the app font. Orphée : Bricolage Grotesque auto-hébergée, police
+      unique — <link rel="stylesheet" href="/css/fonts.css">. (Zagreus et
+      Ariane gardent DM Sans + DM Mono via Google Fonts.)
+   2. Link this file.
+   3. Put the app theme on a wrapper: <body data-app="zagreus"> | "ariane" | "orphee".
+      Tokens below resolve to that app's accent + canvas. Anything written
+      against the shared semantic vars (--accent, --bg, --surface, --text…)
+      themes itself automatically.
+
+   The whole suite is DARK-FIRST. Near-black canvases, layered surfaces,
+   hairline borders, one luminous accent per app, mono type for metadata.
+   ============================================================================ */
+
+:root {
+  /* ---- Type ---------------------------------------------------------- */
+  /* Orphée v3 : une police unique, Bricolage Grotesque (titres ET
+     annotations, choix PM). --font-mono est conservé comme alias pour ne pas
+     toucher chaque règle : il pointe sur la même police. */
+  --font-sans: 'Bricolage Grotesque', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-sans);
+
+  /* Type scale (rem). Mono is reserved for metadata / counts / timestamps /
+     commands / wordmarks — never for running prose. */
+  --t-display: 2.25rem;   /* 36px — login wordmark            */
+  --t-h1:      1.5rem;    /* 24px — screen / metric value      */
+  --t-h2:      1.0625rem; /* 17px — card & section titles      */
+  --t-body:    0.9375rem; /* 15px — chat + body default        */
+  --t-sm:      0.8125rem; /* 13px — secondary, list rows       */
+  --t-meta:    0.6875rem; /* 11px — mono metadata, eyebrows    */
+  --t-micro:   0.625rem;  /* 10px — counts, ai-tags            */
+
+  --fw-light: 300;
+  --fw-reg:   400;
+  --fw-med:   500;
+  --fw-semi:  600;
+
+  --lh-tight: 1.2;
+  --lh-snug:  1.45;
+  --lh-body:  1.55;
+
+  --tracking-eyebrow: 0;  /* plus de titres en capitales espacées (v3) */
+
+  /* ---- Radius -------------------------------------------------------- */
+  --radius-sm:  6px;    /* chips inset, set-chips           */
+  --radius:     10px;   /* cards, inputs, buttons           */
+  --radius-lg:  14px;   /* large cards, sheets, import zones */
+  --radius-pill: 999px; /* chips, status pills, avatars      */
+
+  /* ---- Spacing (4pt base) -------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 10px;
+  --sp-5: 12px;
+  --sp-6: 14px;
+  --sp-7: 16px;
+  --sp-8: 24px;
+  --sp-9: 32px;
+
+  /* ---- Elevation ----------------------------------------------------- */
+  --shadow-pop:   0 8px 24px rgba(0,0,0,0.45);   /* toasts, pickers        */
+  --shadow-modal: 0 12px 40px rgba(0,0,0,0.55);  /* modals, fullscreen      */
+  --shadow-deep:  0 32px 80px rgba(0,0,0,0.70);  /* device / app container  */
+
+  /* ---- Motion -------------------------------------------------------- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.12s;   /* hover / color shifts   */
+  --dur:      0.15s;   /* default transitions    */
+  --dur-slow: 0.2s;    /* tab / layout shifts    */
+
+  /* ---- Universal status colors (shared across all 3 apps) ------------ */
+  --ok:    #6fbf73;   /* sync OK, success, "done"      */
+  --warn:  #ffb84d;   /* sync in-progress, attention   */
+  --error: #d96d6d;   /* sync error, destructive        */
+}
+
+/* ============================================================================
+   THEME — ZAGREUS · flame & power
+   Warm red-black canvas, flame gradient accent, green "eyes" highlight.
+   ============================================================================ */
+[data-app="zagreus"] {
+  --bg:        #090608;
+  --surface:   #120c10;
+  --surface-2: #1a1118;
+  --surface-3: #221520;
+
+  --text:   #f2ede8;   /* warm cream  */
+  --muted:  #9a8a96;
+  --dim:    #5a4858;
+
+  --border:  rgba(255,255,255,0.07);
+  --border-2:rgba(255,255,255,0.14);
+
+  /* Accent is a GRADIENT for Zagreus — rouge vif → orange → or.
+     Use --accent (solid mid-flame) for borders/dots/text; --accent-grad for
+     fills, bars, the avatar, primary buttons, active tabs. */
+  --accent:      #E03010;
+  --accent-soft: #C4160A;
+  --accent-hi:   #F5C840;
+  --accent-grad: linear-gradient(90deg, #C4160A 0%, #C4160A 15%, #E03010 30%, #E85A10 50%, #EF8A20 72%, #F5C840 100%);
+  --accent-radial: linear-gradient(135deg, #C4160A 0%, #E85A10 50%, #F5C840 100%); /* avatars / circles */
+
+  /* FLAME SHADES — the tonal ramp. ~50% red (1–5), orange mid (6–8),
+     ~20% yellow (9–10). Use for fills, bars, heat scales, hover steps. */
+  --flame-1:  #7E0D05;   /* deepest ember   */
+  --flame-2:  #A11308;
+  --flame-3:  #C4160A;   /* core red        */
+  --flame-4:  #D62410;
+  --flame-5:  #E03010;   /* red-orange      */
+  --flame-6:  #E85A10;   /* orange          */
+  --flame-7:  #EF7A18;
+  --flame-8:  #EF8A20;   /* amber           */
+  --flame-9:  #F2AE2E;
+  --flame-10: #F5C840;   /* yellow-gold     */
+  --accent-dim:  rgba(196,22,10,0.18);   /* user bubble, active pill bg  */
+  --accent-glow: 0 0 14px rgba(196,22,10,0.55);
+  --focus-ring:  rgba(196,22,10,0.45);
+
+  /* Highlight — Zagreus' green "eyes": used for **bold** in coach replies,
+     trend-up, the live status dot. */
+  --highlight:     #4DC84A;
+  --highlight-dim: rgba(77,200,74,0.15);
+  --highlight-glow:0 0 8px rgba(77,200,74,0.4);
+
+  /* CROSS-ACCENT (the cycle) — a thread of a sibling app.
+     Zagreus carries GREEN (→ Orphée). Same value as the green eye, so it's
+     already woven in. Use sparingly: secondary highlights, a 2nd chart series. */
+  --accent-2:     #4DC84A;
+  --accent-2-dim: rgba(77,200,74,0.15);
+
+  /* PR / personal-record badge */
+  --pr-bg:   rgba(196,22,10,0.15);
+  --pr-text: #F5C840;
+
+  font-family: var(--font-sans);
+}
+
+/* ============================================================================
+   THEME — ARIANE · blue & calm
+   Neutral near-black, single blue accent, six-category label palette.
+   ============================================================================ */
+[data-app="ariane"] {
+  --bg:        #0f0f0f;
+  --surface:   #1a1a1a;
+  --surface-2: #222222;
+  --surface-3: #2a2a2a;
+
+  --text:   #f0f0f0;
+  --muted:  #888888;
+  --dim:    #555555;
+
+  --border:  rgba(255,255,255,0.08);
+  --border-2:rgba(255,255,255,0.15);
+
+  /* Calm, composed azure — chief-of-staff clarity, not a bright UI blue.
+     Slightly cooled & desaturated from the original arbitrary #4d9fff. */
+  --accent:      #5a9cdc;
+  --accent-soft: #4685c6;
+  --accent-hi:   #8fbce8;
+  --accent-grad: linear-gradient(90deg, #5a9cdc, #79b2e6);
+  --accent-radial: linear-gradient(135deg, #5a9cdc, #4685c6);
+
+  /* BLUE SHADES — calm tonal ramp, deep navy → azure (accent @7) → pale. */
+  --blue-1:  #0d2138;
+  --blue-2:  #143251;
+  --blue-3:  #1d4570;
+  --blue-4:  #265a8f;
+  --blue-5:  #3470b3;
+  --blue-6:  #4685c6;
+  --blue-7:  #5a9cdc;   /* accent */
+  --blue-8:  #79b2e6;
+  --blue-9:  #9ec8ee;
+  --blue-10: #c4ddf5;
+  --accent-dim:  rgba(90,156,220,0.13);
+  --accent-glow: 0 0 14px rgba(90,156,220,0.32);
+  --focus-ring:  rgba(90,156,220,0.45);
+
+  --highlight:     #4dff91;   /* "done" / accomplished */
+  --highlight-dim: rgba(77,255,145,0.10);
+
+  /* HIGHLIGHT ACCENT — gold (chosen by eye; rhymes with Orphée's gold). */
+  --accent-2:     #e0a23f;
+  --accent-2-dim: rgba(224,162,63,0.16);
+
+  /* Six-category label palette — Ariane's organizational system.
+     Each: solid text color + a 12-15% tint background. */
+  --label-pro:     #5a9cdc;  --label-pro-bg:     rgba(90,156,220,0.15);
+  --label-perso:   #2dd4bf;  --label-perso-bg:   rgba(45,212,191,0.12);
+  --label-app:     #c084fc;  --label-app-bg:     rgba(180,120,255,0.15);
+  --label-cuisine: #ffb84d;  --label-cuisine-bg: rgba(255,184,77,0.15);
+  --label-cadeaux: #f472b6;  --label-cadeaux-bg: rgba(255,100,180,0.12);
+  --label-bucket:  #4dff91;  --label-bucket-bg:  rgba(77,255,145,0.10);
+
+  /* Eisenhower quadrant pips */
+  --pip-red:   #ff4d4d;
+  --pip-blue:  #5a9cdc;
+  --pip-amber: #ffb84d;
+  --pip-gray:  #666666;
+
+  font-family: var(--font-sans);
+}
+
+/* ============================================================================
+   THEME — ORPHÉE · green & creative
+   Cool-neutral near-black, verdant emerald accent, 5-step grade scale.
+   Orpheus the musician: green for growth / song / creativity. (Distinct from
+   Zagreus' grass-green eye — Orphée leans emerald/jade.)
+   ============================================================================ */
+[data-app="orphee"] {
+  --bg:        #0a0c0b;
+  --surface:   #141815;
+  --surface-2: #1c211d;
+  --surface-3: #262d28;
+
+  --text:   #e8eae9;
+  --muted:  #88938d;
+  --dim:    #5a625d;
+
+  --border:  #2a322d;
+  --border-2:#3a443e;
+
+  --accent:      #3fc58e;   /* verdant emerald */
+  --accent-soft: #34a878;
+  --accent-hi:   #6fdcac;
+  --accent-grad: linear-gradient(90deg, #3fc58e, #6fdcac);
+  --accent-radial: linear-gradient(135deg, #3fc58e, #34a878);
+
+  /* GREEN SHADES — a voyage: deep green → emerald (accent @7) → teal/aqua.
+     The cool drift gives Orphée its "fluvial" feel; gold highlight contrasts. */
+  --green-1:  #06251c;
+  --green-2:  #0a3a2c;
+  --green-3:  #0f503d;
+  --green-4:  #15684e;
+  --green-5:  #1f8866;
+  --green-6:  #2ba87f;
+  --green-7:  #3fc58e;   /* accent */
+  --green-8:  #45d4ad;
+  --green-9:  #6ce0cf;
+  --green-10: #aceee6;
+  --accent-dim:  rgba(63,197,142,0.16);
+  --accent-glow: 0 0 14px rgba(63,197,142,0.30);
+  --focus-ring:  #3fc58e;
+
+  --highlight:     #6fdcac;
+  --highlight-dim: rgba(63,197,142,0.12);
+
+  /* CROSS-ACCENT (the cycle) — Orphée carries a warm GOLD/FLAME (→ Zagreus),
+     bonding the two Greek-underworld figures. Echoes the flame's gold end
+     (#F5C840) and the app's original bronze. Rich against the emerald. */
+  --accent-2:     #e0a23f;
+  --accent-2-dim: rgba(224,162,63,0.16);
+
+  /* Grade scale (1–5) — Orphée's rating system. DISTINCT categorical colours
+     (grey / blue / green / magenta / gold), kept OFF the green ramp so ratings
+     are instantly distinguishable. bg = badge fill, fg = legible text. */
+  --grade-1-bg: #6b6b73; --grade-1-fg: #e8eae9;  /* Zappé · grey    */
+  --grade-2-bg: #5a9cdc; --grade-2-fg: #08121c;  /* Sympa · blue    */
+  --grade-3-bg: #3fc58e; --grade-3-fg: #062012;  /* Génial · green  */
+  --grade-4-bg: #ff5fa2; --grade-4-fg: #2a0716;  /* Culte · magenta */
+  --grade-5-bg: #e0a23f; --grade-5-fg: #241804;  /* Adoré · gold  */
+
+  font-family: var(--font-sans);
+  /* Chiffres de même largeur : remplace l'alignement qu'offrait la mono. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   THEME — ULYSSE · social & play  ·  ⚠ PROVISIONAL — confirm hue with Axel
+   The planned 4th app (video games), named for Ulysse/Odysseus — the hero of
+   the Odyssey, the suite's namesake. DiSC "i" = yellow / social / play.
+   Yellow is deliberately kept PURE & LEMON to stay distinct from Zagreus'
+   flame-gold (#F5C840) and Orphée's gold cross-accent (#e0a23f). Playfulness
+   should come from motion + copy + iconography, NOT from breaking the system.
+   ============================================================================ */
+[data-app="ulysse"] {
+  --bg:        #0d0c07;
+  --surface:   #16140d;
+  --surface-2: #1f1c12;
+  --surface-3: #2a2618;
+
+  --text:   #efe9dc;
+  --muted:  #968f7e;
+  --dim:    #5e5746;
+
+  --border:  rgba(255,255,255,0.08);
+  --border-2:rgba(255,255,255,0.15);
+
+  --accent:      #ffd21e;   /* lemon-yellow, playful */
+  --accent-soft: #e6bd16;
+  --accent-hi:   #ffe06a;
+  --accent-grad: linear-gradient(90deg, #ffd21e, #ffe06a);
+  --accent-radial: linear-gradient(135deg, #ffd21e, #f5a623);  /* sunny */
+
+  /* YELLOW SHADES — deep gold → lemon (accent @6) → cream. Monotonic, no
+     orange (stays clear of Zagreus). */
+  --yellow-1:  #8f7a00;
+  --yellow-2:  #ab9100;
+  --yellow-3:  #c7a900;
+  --yellow-4:  #e0bf08;
+  --yellow-5:  #f5d014;
+  --yellow-6:  #ffd21e;   /* accent */
+  --yellow-7:  #ffdf52;
+  --yellow-8:  #ffe87f;
+  --yellow-9:  #fff2ad;
+  --yellow-10: #fff8da;
+  --accent-dim:  rgba(255,210,30,0.16);
+  --accent-glow: 0 0 14px rgba(255,210,30,0.32);
+  --focus-ring:  #ffd21e;
+
+  --highlight:     #ffe06a;
+  --highlight-dim: rgba(255,210,30,0.12);
+
+  /* HIGHLIGHT ACCENT — magenta (chosen by eye; playful pop on the gold ramp). */
+  --accent-2:     #ff5fa2;
+  --accent-2-dim: rgba(255,95,162,0.16);
+
+  font-family: var(--font-sans);
+}
+
+/* ============================================================================
+   SEMANTIC ELEMENT DEFAULTS
+   Opt-in base styles. Apply to a themed subtree; everything reads the vars
+   above so the same markup themes per app.
+   ============================================================================ */
+[data-app] {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-app] .od-eyebrow {
+  font-size: var(--t-meta);
+  font-weight: var(--fw-med);
+  color: var(--muted);
+}
+[data-app] .od-mono { font-family: var(--font-mono); }
+[data-app] .od-h1 { font-size: var(--t-h1); font-weight: var(--fw-semi); line-height: var(--lh-tight); }
+[data-app] .od-h2 { font-size: var(--t-h2); font-weight: var(--fw-semi); line-height: var(--lh-snug); }
+[data-app] .od-meta { font-family: var(--font-mono); font-size: var(--t-meta); color: var(--muted); }

@@ -1,0 +1,13 @@
+{
+  "name": "orphee-dev",
+  "private": true,
+  "description": "Mode local d'Orphée : émulateurs Firebase (projet fictif demo-orphee) + données fictives.",
+  "scripts": {
+    "dev": "firebase emulators:exec --project demo-orphee --only auth,firestore,functions,hosting,storage \"node seed.js --wait\"",
+    "shoot": "node shoot-app.js"
+  },
+  "devDependencies": {
+    "firebase": "^12.13.0",
+    "firebase-tools": "^15.32.1"
+  }
+}

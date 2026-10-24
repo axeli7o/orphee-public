@@ -1,0 +1,818 @@
+/* ============================================================================
+   Orphée — Album detail overlay  (dt-* prefix throughout)
+   Spec: design_handoff_album_detail/README.md
+   dt-* avoids ad-blocker false-positives (no "ad-" prefix).
+   ============================================================================ */
+
+/* ---- Scrim (z-48, sits behind the sheet) -------------------------------- */
+.dt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+  /* No backdrop-filter: a full-screen blur recomputed while the sheet slides
+     over it is a heavy GPU cost on mobile. A darker solid tint reads the same
+     and stays cheap. */
+  background: rgba(0, 0, 0, 0.66);
+  opacity: 0;
+  transition: opacity 0.34s var(--ease);
+}
+.dt-scrim.open { opacity: 1; }
+
+/* ---- Sheet (z-49) — bottom-anchored card over the library --------------- */
+/* Resting state is a slide-up card: it covers most of the screen but leaves a
+   peek of the library above, with a drag handle that dismisses it downward.
+   Class-toggled transform (not a keyframe) so a drag can drive it directly. */
+.dt-overlay {
+  position: fixed;     /* viewport-anchored — NOT the (very tall) library doc */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  z-index: 49;
+  height: 90vh;
+  max-height: 90vh;
+  height: 90dvh;
+  max-height: 90dvh;
+  background: var(--bg);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid var(--border-2);
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.55);
+  /* The shell only clips + slides; scrolling lives on the inner .dt-scroll.
+     Keeping the animated transform off the scroll container is what kills the
+     first-scroll flicker (no clipped composite layer to re-rasterize). */
+  overflow: hidden;
+  container-type: inline-size;
+  transform: translateY(100%);
+  transition: transform 0.34s var(--ease), height 0.3s var(--ease),
+    border-radius 0.3s var(--ease);
+}
+.dt-overlay.open { transform: translateY(0); }
+
+/* Scroll layer — no transform, no animated clip, so the browser keeps a stable
+   scrolling composite layer from the first frame. */
+.dt-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* keep a downward overscroll inside the sheet — no browser pull-to-refresh,
+     the drag is captured to close the detail instead */
+  overscroll-behavior-y: contain;
+}
+/* will-change is applied only while the sheet is sliding or being dragged —
+   keeping it on permanently makes the browser hold a huge backing layer for
+   the whole scroller, which it must re-rasterize on the first scroll (the
+   one-time flicker). Promote during motion, then drop it. */
+.dt-overlay.animating { will-change: transform; }
+
+/* Promoted to full screen once the user scrolls/swipes up — the bottom is
+   anchored so the card simply grows upward to reveal the rest of the detail. */
+.dt-overlay.expanded {
+  height: 100vh;
+  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+}
+
+/* ---- Drag handle (phone) ------------------------------------------------- */
+.dt-handle {
+  pointer-events: all;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border-2);
+  align-self: center;
+  margin: 4px auto 0;
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;        /* the header is a drag target, not a scroller */
+}
+
+/* ---- Floating top bar (sticky, glassy) ---------------------------------- */
+.dt-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 10px;
+  pointer-events: none;
+}
+
+.dt-iconbtn {
+  pointer-events: all;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  /* solid tint instead of backdrop-filter blur — the buttons are sticky over a
+     scrolling body, and a live blur recomposites every scroll frame (jank). */
+  background: rgba(10, 12, 11, 0.82);
+  color: var(--text);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dt-iconbtn:hover { background: rgba(30, 36, 32, 0.75); }
+
+.dt-favbtn.on {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+/* ---- Hero --------------------------------------------------------------- */
+.dt-hero {
+  position: relative;
+  margin-top: -68px; /* slides under the sticky bar */
+  padding: 80px 22px 24px;
+  overflow: hidden;
+  touch-action: none;        /* grab the hero to drag the whole sheet */
+}
+
+.dt-herobg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+}
+
+.dt-heroscrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 12, 11, 0.22),
+    rgba(10, 12, 11, 0.5) 54%,
+    var(--bg)
+  );
+}
+
+.dt-heroinner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+/* Cover "stage": holds the sleeve (cover) in front and the laser disc behind.
+   When .cd-out is set, the disc slides 50% out to the right and the whole stage
+   shifts slightly left so the cover+disc composite reads balanced (not the
+   cover alone centered). */
+.dt-coverstage {
+  position: relative;
+  flex-shrink: 0;
+  width: 186px;
+  height: 186px;
+  transform: translateX(0);
+  transition: transform 0.5s var(--ease);
+}
+.dt-coverstage.cd-out { transform: translateX(-18%); }
+
+.dt-cover {
+  position: relative;
+  z-index: 2;
+  width: 186px;
+  height: 186px;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  container-type: size;
+}
+
+/* Laser disc (90s CD look) — placeholder shiny rainbow until real artwork.
+   Sits behind the sleeve; same diameter, slides right by 50% of itself. */
+.dt-disc {
+  position: absolute;
+  z-index: 1;
+  /* smaller than the sleeve so, when retracted, it tucks fully inside the
+     cover's rounded corners (inset ≈ corner radius) */
+  top: 16px;
+  left: 16px;
+  width: 154px;
+  height: 154px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translateX(0) scale(0.9);
+  transition: transform 0.55s var(--ease), opacity 0.4s var(--ease);
+  background:
+    radial-gradient(circle at 50% 50%,
+      #14141a 0 9%, rgba(20, 20, 26, 0) 9.5% 13%,
+      #d6dcf0 13.5% 16%, rgba(0, 0, 0, 0) 16.5%),
+    conic-gradient(from 210deg,
+      rgba(255, 255, 255, 0) 0deg, rgba(180, 215, 255, 0.85) 38deg,
+      rgba(255, 255, 255, 0) 84deg, rgba(255, 200, 240, 0.8) 150deg,
+      rgba(255, 255, 255, 0) 200deg, rgba(200, 255, 230, 0.85) 268deg,
+      rgba(255, 255, 255, 0) 320deg, rgba(255, 245, 200, 0.8) 350deg,
+      rgba(255, 255, 255, 0) 360deg),
+    radial-gradient(circle at 50% 50%,
+      #eef1ff 0 30%, #b9c2da 56%, #98a2bd 74%, #cdd5e9 88%, #828bb0 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    inset 0 0 28px rgba(0, 0, 0, 0.18),
+    0 14px 34px rgba(0, 0, 0, 0.5);
+}
+.dt-coverstage.cd-out .dt-disc {
+  opacity: 1;
+  transform: translateX(50%) scale(0.97);
+}
+
+
+.dt-herometa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-gradetag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0c0c0c;
+  line-height: 1.4;
+}
+
+.dt-title {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  line-height: 1.2;
+}
+
+.dt-artist {
+  font-size: 17px;
+  opacity: 0.86;
+  margin: 0;
+}
+
+/* Nom de l'artiste = lien vers sa fiche (PM-26) */
+.dt-artist-link {
+  padding: 0; background: none; border: 0; color: inherit; font: inherit;
+  font-size: 17px; cursor: pointer; text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, .3); text-underline-offset: 3px;
+}
+
+.dt-meta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4px;
+}
+
+.dt-listen {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0c0c0c;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform .15s var(--ease), filter .15s var(--ease);
+}
+.dt-listen:hover { filter: brightness(1.06); }
+.dt-listen:active { transform: scale(0.97); }
+
+.dt-listen-ic {
+  font-size: 11px;
+  line-height: 1;
+  transform: translateY(0.5px);
+}
+
+.dt-dot {
+  opacity: 0.5;
+  margin: 0 2px;
+}
+
+/* ---- Body --------------------------------------------------------------- */
+.dt-body {
+  padding: 4px 22px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ---- Sections ----------------------------------------------------------- */
+.dt-sec {
+  padding: 20px 0 0;
+  border-top: 1px solid var(--border);
+}
+.dt-sec + .dt-sec { margin-top: 4px; }
+
+.dt-seclabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.dt-sechead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.dt-sechead .dt-seclabel { margin-bottom: 0; }
+
+.dt-secnote {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* ---- Ta note (v2.24.0) : 5 boutons de note, puis genre en pastilles ------ */
+.dt-curation { display: block; margin-bottom: 12px; }
+.dt-grades { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.dt-g {
+  position: relative; overflow: hidden; height: 56px; border: 0; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  font-family: var(--font-sans); cursor: pointer;
+  transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), opacity .25s, filter .25s, box-shadow .3s;
+}
+.dt-g:active:not(:disabled) { transform: scale(.94); transition: transform .06s; }
+.dt-g:disabled { cursor: default; }
+.dt-g-n { font-size: 16px; font-weight: 800; }
+.dt-g-l { font-size: 10px; font-weight: 600; }
+.dt-grades.has .dt-g:not(.sel) { opacity: .35; filter: saturate(.6); }
+.dt-g.sel { transform: scale(1.06); box-shadow: inset 0 0 0 2px var(--text), 0 8px 24px rgba(0, 0, 0, .4); }
+.dt-g.boom { animation: dt-boom .45s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes dt-boom { 0% { transform: scale(.9); } 50% { transform: scale(1.18); } 100% { transform: scale(1.06); } }
+.dt-ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .45); transform: scale(0);
+  animation: dt-rip .5s ease-out forwards; pointer-events: none; }
+@keyframes dt-rip { to { transform: scale(4); opacity: 0; } }
+.dt-impact { min-height: 28px; margin: 10px 0 2px; font-size: 15px; }
+.dt-impact p { margin: 0; opacity: 0; transform: translateY(6px); animation: dt-rise .35s cubic-bezier(.2, .8, .2, 1) forwards; }
+.dt-impact .dt-impact-off { color: var(--muted); }
+@keyframes dt-rise { to { opacity: 1; transform: none; } }
+.dt-genrelabel { margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+/* Genre replié : un gros bouton résumé, à la couleur du genre. */
+.dt-gsum {
+  --c: var(--border-2);
+  width: 100%; min-height: 56px; margin-top: 8px; padding: 10px 14px; border: 0; border-radius: 14px; cursor: pointer;
+  display: flex; align-items: center; gap: 12px; text-align: left; color: var(--text); font-family: var(--font-sans);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 18%, var(--surface)) 0%, var(--surface) 80%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, var(--border));
+  transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s, background .25s;
+}
+.dt-gsum:active { transform: scale(.98); transition: transform .06s; }
+.dt-gsum.set { box-shadow: inset 0 0 0 1.5px var(--c); }
+.dt-gsum-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; background: var(--c); }
+.dt-gsum:not(.set) .dt-gsum-dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
+.dt-gsum-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.dt-gsum-txt b { font-size: 17px; font-weight: 700; }
+.dt-gsum:not(.set) .dt-gsum-txt b { color: var(--muted); }
+.dt-gsum-txt small { font-size: 12px; color: var(--dim); }
+.dt-gsum-chev { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+.dt-gsum.open .dt-gsum-chev { transform: rotate(180deg); }
+.dt-gpanel[hidden] { display: none; }
+.dt-gt.in { animation: dt-chip-in .35s cubic-bezier(.34, 1.56, .64, 1) both; }
+/* Genre en tuiles (v2.26.0) : grosses cibles teintées de leur couleur ; la
+   tuile choisie se remplit, gonfle et prend un reflet. Les autres restent
+   pleines (jamais grisées). */
+.dt-gts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.dt-gt {
+  --c: #3fc58e;
+  position: relative; height: 60px; overflow: hidden; border: 0; border-radius: 14px; cursor: pointer;
+  display: flex; align-items: flex-end; padding: 8px 11px; text-align: left;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--text);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 22%, var(--surface)) 0%, var(--surface) 75%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, var(--border));
+  transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s, background .25s, color .25s;
+}
+.dt-gt.inh { box-shadow: inset 0 0 0 1.5px transparent; outline: 1.5px dashed var(--c); outline-offset: -1.5px; }
+.dt-gt::before {
+  content: ""; position: absolute; top: 9px; left: 11px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--c); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background .25s;
+}
+.dt-gt:active:not(:disabled) { transform: scale(.95); transition: transform .06s; }
+.dt-gt.on { background: var(--c); color: #0b0d0c; box-shadow: 0 0 0 2px var(--c), 0 8px 26px -8px var(--c); transform: scale(1.04); }
+.dt-gt.on::before { background: #0b0d0c; transform: scale(1.3); }
+.dt-gt.on::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .45) 50%, transparent 70%);
+  transform: translateX(-120%); animation: dt-sheen .7s ease forwards;
+}
+@keyframes dt-sheen { to { transform: translateX(120%); } }
+.dt-gt.boom, .dt-sg.boom { animation: dt-gboom .45s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes dt-gboom { 0% { transform: scale(.9); } 60% { transform: scale(1.1); } 100% { transform: scale(1.04); } }
+/* Sous-genres : grosses pastilles cerclées de la couleur du genre. */
+.dt-sgs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dt-sgs[hidden] { display: none; }
+.dt-sg {
+  --c: #3fc58e;
+  position: relative; overflow: hidden; height: 42px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--text);
+  background: var(--surface-2); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent);
+  transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), background .2s, color .2s, box-shadow .2s;
+}
+.dt-sg:active:not(:disabled) { transform: scale(.94); transition: transform .06s; }
+.dt-sg.on { background: var(--c); color: #0b0d0c; box-shadow: 0 6px 20px -6px var(--c); transform: scale(1.06); }
+.dt-sg.in { animation: dt-chip-in .35s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes dt-chip-in { from { opacity: 0; transform: translateY(10px) scale(.85); } to { opacity: 1; transform: none; } }
+.dt-gimpact { min-height: 24px; margin-top: 12px; }
+.dt-gimpact .dt-pct { color: var(--accent); font-weight: 700; }
+/* Halo à la couleur de la note posée, autour de la fiche. */
+.dt-overlay { --dt-glow: transparent; }
+.dt-overlay.glow { box-shadow: 0 0 60px -10px var(--dt-glow), 0 -20px 60px rgba(0, 0, 0, 0.55); }
+/* Le trait du halo est dessiné PAR-DESSUS le contenu : en ombre interne de
+   la carte, il passait sous l'en-tête (qui a son propre fond) et ne se
+   voyait que le long du bas de la fiche. */
+.dt-overlay::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  border-radius: inherit; box-shadow: inset 0 0 0 1.5px var(--dt-glow);
+  opacity: 0; transition: opacity .3s;
+}
+.dt-overlay.glow::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .dt-g, .dt-gt, .dt-gt::after, .dt-sg, .dt-impact p, .dt-ripple { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+.dt-select {
+  flex: 1;
+  padding: 9px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.12s;
+}
+.dt-select:focus { outline: none; border-color: var(--accent); }
+.dt-select:disabled { opacity: 0.4; cursor: default; }
+
+/* ---- Ta note : description (lecture seule, éditable au clic) ------------- */
+.dt-desc {
+  font-size: 15px;
+  line-height: 1.62;
+  color: var(--text);
+  white-space: pre-wrap;       /* respecte les retours à la ligne du texte */
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: text;
+  transition: background 0.12s, border-color 0.12s;
+}
+.dt-desc:hover { background: var(--surface-2); }
+.dt-desc:focus-visible { outline: none; border-color: var(--accent); }
+.dt-desc--empty {
+  color: var(--dim);
+  font-style: italic;
+}
+
+/* ---- Ta note : comment textarea (mode édition) -------------------------- */
+.dt-comment {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.62;
+  font-family: var(--font-sans);
+  resize: none;
+  overflow: hidden;            /* hauteur pilotée en JS → jamais de scrollbar */
+  box-sizing: border-box;
+}
+.dt-comment::placeholder { color: var(--dim); }
+.dt-comment:focus { outline: none; border-color: var(--accent); }
+
+/* ---- Chart -------------------------------------------------------------- */
+.dt-chartwrap { margin-top: 4px; }
+
+.dt-chartsvg {
+  width: 100%;
+  height: 150px;
+}
+
+.dt-xaxis {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* ---- Tracks ------------------------------------------------------------- */
+.dt-tracks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dt-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.dt-trank {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dim);
+  width: 14px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.dt-tname {
+  flex: 1;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-tbarwrap {
+  width: 78px;
+  height: 3px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.dt-tbar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.5;
+  border-radius: 2px;
+}
+
+.dt-tcount {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  min-width: 36px;
+}
+
+/* ---- Écho --------------------------------------------------------------- */
+.dt-poetic {
+  font-size: 15px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.dt-echointro {
+  font-size: 15px;
+  color: var(--text);
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+
+.dt-echoword {
+  color: var(--accent-2);
+}
+
+.dt-echolist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dt-echoitem {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  transition: background 0.12s;
+}
+.dt-echoitem:hover { background: var(--surface-2); }
+
+.dt-echobar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--accent-dim);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+.dt-echocover {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  container-type: size;
+}
+
+.dt-echoinfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dt-echoalbum {
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dt-echoartist {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dt-echocount {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* ---- Desktop (≥980px container query) ----------------------------------- */
+@container (min-width: 980px) {
+  .dt-hero {
+    padding: 80px 40px 32px;
+  }
+
+  .dt-heroinner {
+    flex-direction: row;
+    align-items: flex-end;
+    max-width: 1040px;
+    margin: 0 auto;
+    text-align: left;
+    gap: 32px;
+  }
+
+  .dt-coverstage,
+  .dt-cover {
+    width: 226px;
+    height: 226px;
+  }
+  .dt-disc {
+    top: 16px;
+    left: 16px;
+    width: 194px;
+    height: 194px;
+  }
+
+  /* PC (v2.31.2) : le disque sorti reste dans la colonne de la pochette
+     (sa place est réservée à droite) au lieu de glisser sous le titre, et
+     la pochette s'aligne sur le bord gauche du contenu. */
+  .dt-heroinner { padding: 0 40px; box-sizing: border-box; }
+  .dt-coverstage.cd-out { transform: none; margin-right: 88px; }
+  .dt-coverstage { transition: transform 0.5s var(--ease), margin-right 0.5s var(--ease); }
+
+  .dt-herometa { align-items: flex-start; }
+  .dt-herometa .dt-asiderow { justify-content: flex-start; }
+
+  .dt-title { font-size: 42px; }
+
+  .dt-meta { justify-content: flex-start; }
+
+  .dt-body {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 52px;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 4px 40px 64px;
+  }
+
+  .dt-curate {
+    flex: 0 0 312px;
+    position: sticky;
+    top: 84px;
+  }
+
+  .dt-stats { flex: 1; }
+
+  .dt-chartsvg { height: 184px; }
+}
+
+/* On larger screens the rich two-column layout needs the full height; the
+   sheet still slides up, but it's full-bleed and the handle is hidden. */
+@media (min-width: 768px) {
+  .dt-overlay {
+    height: 100vh;
+    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .dt-handle { display: none; }
+}
+/* Fiche ouverte : la page dessous ne défile plus (une seule barre). */
+body:has(.dt-overlay.open) { overflow: hidden; }
+
+/* ---- Reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dt-overlay { transition: none; }
+  .dt-scrim { transition: none; }
+  .dt-coverstage,
+  .dt-cover,
+  .dt-disc,
+  .dt-herometa,
+  .dt-body { transition: none; }
+}
+
+/* ---- Rattachés (album canonique, PM-29) --------------------------------- */
+.dt-sec[hidden] { display: none; }
+.dt-links { display: flex; flex-direction: column; gap: 2px; padding-bottom: 16px; }
+.dt-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+.dt-link-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dt-link-n {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.dt-links-go { display: block; margin-top: 6px; padding: 0; text-align: left; }
+.dt-overlay { transition: transform 0.34s var(--ease), height 0.3s var(--ease), border-radius 0.3s var(--ease), box-shadow .5s; }
+/* Invité : une invitation à essayer (v2.24.1). */
+.dt-trial { margin: 0 0 10px; font-size: 13.5px; color: var(--accent-2); }
+
+/* Mis de côté (PM-34) : marque-page, puis « Envie forte » une fois en pile. */
+.dt-asiderow { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+.dt-asiderow[hidden], .dt-aside[hidden] { display: none; }
+.dt-aside {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 999px; border: 0;
+  background: rgba(255, 255, 255, .1); color: var(--text);
+  font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  transition: transform .15s var(--ease), background .2s, color .2s;
+}
+.dt-aside:active { transform: scale(0.95); }
+.dt-aside.on { background: rgba(224, 162, 63, .18); color: #e0a23f; box-shadow: inset 0 0 0 1.5px #e0a23f; }
+.dt-aside svg { flex: none; }
+.dt-aside.pop svg { animation: dt-aside-pop .4s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes dt-aside-pop { from { transform: scale(.4) rotate(-30deg); } }
+@media (prefers-reduced-motion: reduce) { .dt-aside.pop svg { animation: none; } }
+
+/* Titre phare (v2.34.0) : l'album tenu par un titre. */
+.dt-phare { display: flex; flex-direction: column; gap: 2px; margin: 0 0 12px; padding: 12px 14px; border-radius: 14px;
+  background: rgba(224, 162, 63, .08); box-shadow: inset 0 0 0 1px rgba(224, 162, 63, .35); }
+.dt-phare-k { font-size: var(--t-label, 12px); font-weight: 700; color: #e0a23f; }
+.dt-phare-t { font-size: var(--t-item, 17px); font-weight: 700; }
+.dt-phare-m { font-size: var(--t-sub, 13.5px); color: var(--muted); }
+.dt-track.phare .dt-tname { color: #e0a23f; font-weight: 700; }
+.dt-track.phare .dt-tbar { background: #e0a23f; }

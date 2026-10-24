@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orphée — harness visuel</title>
+  <!-- Vrais CSS de l'app (chemins relatifs au repo, pas d'absolu machine) -->
+  <link rel="stylesheet" href="../../public/css/design-system.css">
+  <link rel="stylesheet" href="../../public/css/kit.css">
+  <link rel="stylesheet" href="../../public/css/style.css">
+  <link rel="stylesheet" href="../../public/css/nav.css">
+  <link rel="stylesheet" href="../../public/css/library.css">
+  <link rel="stylesheet" href="../../public/css/detail.css">
+  <link rel="stylesheet" href="../../public/css/stats.css">
+  <script>
+    // Neutralise le reveal-au-scroll : on révèle tout immédiatement pour la
+    // capture (sinon les sections restent à opacity:0 hors viewport).
+    window.IntersectionObserver = class {
+      constructor(cb) { this.cb = cb; }
+      observe(el) { this.cb([{ isIntersecting: true, target: el }], this); }
+      unobserve() {} disconnect() {}
+    };
+    window.ResizeObserver = window.ResizeObserver || class {
+      observe() {} unobserve() {} disconnect() {}
+    };
+  </script>
+</head>
+<body class="is-authed" data-app="orphee">
+  <section id="app-screen"></section>
+  <script type="module" src="./mocks.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+rules_version = '2';
+
+// Règles d'accès (ADR-041, ADR-042). Elles font foi : l'interface ne protège rien.
+// Orphée a un seul propriétaire, désigné dans config/owner {email} — doc
+// modifiable depuis la console Firebase seulement. Sans lui, personne
+// n'entre (échec fermé). IM-1 : cache/*, album_stats/*, covers/* restent en
+// écriture interdite ; users/{uid}/* mutable par son seul propriétaire.
+// IM-8 : un invité (compte anonyme, PM-28) LIT une partie des données du
+// propriétaire tant que son accès existe et n'a pas expiré ; il n'écrit
+// jamais, et ne voit ni la conversation avec Orphée ni ses récits.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Email Google vérifié, égal à celui de config/owner.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '').lower()
+          == get(/databases/$(database)/documents/config/owner).data.email;
+    }
+
+    // Invité : compte anonyme avec un accès (guests/{uid}) non expiré,
+    // dont le partage existe encore (le couper = plus rien). L'échéance est
+    // comparée à l'heure du serveur.
+    function isGuest() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && exists(/databases/$(database)/documents/guests/$(request.auth.uid))
+        && guestValid(get(/databases/$(database)/documents/guests/$(request.auth.uid)).data);
+    }
+    function guestValid(g) {
+      return g.until > request.time
+        && exists(/databases/$(database)/documents/shares/$(g.share));
+    }
+    function isGuestOf(userId) {
+      return isGuest()
+        && get(/databases/$(database)/documents/guests/$(request.auth.uid)).data.owner == userId;
+    }
+    function canRead() {
+      return isGuest() || isOwner();
+    }
+
+    match /config/{document=**} {
+      allow read, write: if false;
+    }
+
+    // Accès invités : écrits par les Functions seulement. Le propriétaire
+    // voit s'il y a un partage en cours (Réglages).
+    match /shares/{id} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+    match /guests/{id} {
+      allow read, write: if false;
+    }
+    // Dérivés propres au propriétaire (pile « Mis de côté », PM-35) : l'invité
+    // ne les lit pas ; écrits par les Functions seulement (IM-1).
+    match /private/{document=**} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner() && request.auth.uid == userId;
+    }
+    // Ce que l'invité peut lire chez le propriétaire — et rien d'autre
+    // (ni chats, ni narrations, ni autres réglages).
+    match /users/{userId}/grades/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/chapters/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    // Qualité, démo de l'invité (v2.32.1) : il lit les décisions d'Axel
+    // pour partir de son état réel — lecture seule (IM-8).
+    match /users/{userId}/album_arbitrations/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/applied_corrections/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/correction_batches/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/quality_later/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/artist_genres/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    // CD d'Axel (E12, PM-38) : l'invité voit les galettes, n'écrit rien.
+    match /users/{userId}/cds/{id} {
+      allow read: if isGuestOf(userId);
+    }
+    match /users/{userId}/settings/{id} {
+      allow read: if id in ['oddity', 'profile'] && isGuestOf(userId);
+    }
+
+    // Qualité des données (PM-31, ADR-046) : dérivé écrit par les
+    // Functions. Lu aussi par l'invité depuis v2.32.1 (démo, PM-28) : il y
+    // joue sur une copie locale, sans jamais écrire (IM-8).
+    match /quality/{document=**} {
+      allow read: if canRead();
+      allow write: if false;
+    }
+
+    match /cache/{document=**} {
+      allow read: if canRead();
+      allow write: if false;
+    }
+
+    match /album_stats/{document=**} {
+      allow read: if canRead();
+      allow write: if false;
+    }
+
+    match /covers/{document=**} {
+      allow read: if canRead();
+      allow write: if false;
+    }
+  }
+}

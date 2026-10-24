@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0a0c0b">
+    <title>Orphée</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+    <link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/design-system.css">
+    <link rel="stylesheet" href="/css/kit.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/detail.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/library.css">
+    <link rel="stylesheet" href="/css/stats.css">
+    <link rel="stylesheet" href="/css/moi.css">
+    <link rel="stylesheet" href="/css/quality.css">
+    <link rel="stylesheet" href="/css/worldmap.css">
+    <!-- Composants uniques, chargés en dernier : ils font foi (v2.31.0). -->
+    <link rel="stylesheet" href="/css/components.css">
+
+    <script defer src="/__/firebase/12.13.0/firebase-app-compat.js"></script>
+    <script defer src="/__/firebase/12.13.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/12.13.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/12.13.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/init.js"></script>
+    <script defer src="/js/dev-emulators.js"></script>
+    <script defer src="/js/session.js"></script>
+    <script defer src="/js/refdata.js"></script>
+    <script defer src="/js/text.js"></script>
+    <script defer src="/js/juice.js"></script>
+    <script defer src="/js/curation.js"></script>
+    <script defer src="/js/aside.js"></script>
+    <script defer src="/js/cds.js"></script>
+    <script defer src="/js/covers.js"></script>
+    <script defer src="/js/auth.js"></script>
+    <script defer src="/js/nav.js"></script>
+    <script defer src="/js/refresh.js"></script>
+    <script defer src="/js/library.js"></script>
+    <script defer src="/js/artists.js"></script>
+    <script defer src="/js/stats-util.js"></script>
+    <script defer src="/js/stats-charts.js"></script>
+    <script defer src="/js/stats.js"></script>
+    <script defer src="/js/moi-genres.js"></script>
+    <script defer src="/js/moi.js"></script>
+    <script defer src="/js/detail.js"></script>
+    <script defer src="/js/artist-sheet.js"></script>
+    <script defer src="/js/worldmap.js"></script>
+    <script defer src="/js/lib-artists.js"></script>
+    <script defer src="/js/vendor/qrcode.js"></script>
+    <script defer src="/js/settings.js"></script>
+    <script defer src="/js/share.js"></script>
+    <script defer src="/js/lastfm.js"></script>
+    <script defer src="/js/quality.js"></script>
+    <script defer src="/js/fusion.js"></script>
+    <script defer src="/js/chat.js"></script>
+  </head>
+  <body data-app="orphee">
+    <section id="login-screen">
+      <div class="login-card">
+        <h1 class="brand">Orphée</h1>
+        <p class="baseline">Ta bibliothèque musicale, plus claire.</p>
+        <button id="login-btn" class="btn-primary o-btn main block" type="button">
+          Continuer avec Google
+        </button>
+        <p id="login-error" class="error" hidden></p>
+        <p class="join-msg">Ouverture de la bibliothèque…</p>
+      </div>
+    </section>
+
+    <section id="app-screen">
+      <!-- Visite d'un invité (PM-28) : à qui est la bibliothèque, temps restant. -->
+      <div id="guest-banner" class="guest-banner" hidden>
+        <span>Bibliothèque de <b id="guest-owner">Axel</b> · en visite</span>
+        <span id="guest-left" class="guest-left"></span>
+      </div>
+      <!-- nav built dynamically by nav.js -->
+
+      <!-- « Moi » (accueil v3) construit par moi.js -->
+      <main id="view-moi" class="view"></main>
+
+      <!-- #view-library layout built dynamically by library.js -->
+      <main id="view-library" class="view"></main>
+
+      <!-- Qualité des données (PM-31), construit par quality.js -->
+      <main id="view-quality" class="view"></main>
+
+      <main id="view-chat" class="view view--chat">
+        <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Conversation avec Orphée"></div>
+        <div class="k-composer chat-input-area">
+          <div class="k-inputrow">
+            <div class="k-inputwrap">
+              <textarea id="chat-input" class="k-input chat-input" rows="1" placeholder="Écris à Orphée…" autocomplete="off" aria-label="Message"></textarea>
+            </div>
+            <button id="chat-send" class="k-send chat-send" type="button" aria-label="Envoyer">↑</button>
+          </div>
+        </div>
+      </main>
+
+      <main id="view-settings" class="view">
+        <button type="button" class="view-back" data-back="moi">← Retour</button>
+        <!-- Migration coup de cœur → Adoré (v3, PM-08) : construite par fusion.js,
+             visible seulement s'il reste des coups de cœur à migrer. -->
+        <section id="set-fusion" class="stat-card settings-card" hidden></section>
+        <section class="stat-card settings-card">
+          <h3 class="stat-title">Synchronisation</h3>
+          <!-- Réglages sans mode d'emploi (v2.31.1) : un geste, un état d'une ligne. -->
+          <button id="refresh-btn" class="btn-primary o-btn main block" type="button">⟳ Actualiser</button>
+          <p id="last-refresh" class="settings-help set-status-line"></p>
+          <div id="refresh-progress" hidden>
+            <div class="rfp-bar-track"><div id="rfp-bar" class="rfp-bar"></div></div>
+            <span id="rfp-label" class="rfp-label">Lecture des données…</span>
+          </div>
+          <!-- D'où viennent les écoutes : Sheet → Last.fm (lastfm.js, ADR-034). -->
+          <div id="set-scrobbles" class="set-field"></div>
+        </section>
+
+        <!-- Partager ma bibliothèque (PM-28) : construit par share.js. -->
+        <section id="set-share" class="stat-card settings-card"></section>
+
+        <section class="stat-card settings-card">
+          <h3 class="stat-title">Compte</h3>
+          <div class="set-field">
+            <label class="set-label" for="set-lastfm">Nom Last.fm</label>
+            <input id="set-lastfm" class="set-input" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ton nom d'utilisateur Last.fm">
+          </div>
+          <div class="set-field">
+            <label class="set-label" for="set-artist">Ton nom d'artiste</label>
+            <input id="set-artist" class="set-input" type="text" maxlength="100" autocomplete="off" spellcheck="false" placeholder="si tu publies ta musique">
+          </div>
+          <div class="set-account">
+            <span id="user-email" class="settings-help"></span>
+            <button id="logout-btn" class="logout-btn o-link danger" type="button">Se déconnecter</button>
+          </div>
+        </section>
+
+        <!-- Réglages fins, repliés : les valeurs par défaut suffisent. -->
+        <details class="stat-card settings-card settings-adv">
+          <summary class="stat-title">Avancé</summary>
+
+          <div class="set-field">
+            <label class="set-label" for="set-percentile">
+              « Très écouté » à partir du <span id="set-pct-val">90</span>ᵉ percentile
+            </label>
+            <input id="set-percentile" type="range" min="50" max="99" value="90" step="1">
+            <p class="settings-help" id="set-threshold"></p>
+            <p class="settings-help">Albums très écoutés : <span id="set-gradeable-count"></span> · notés : <span id="stats-summary"></span></p>
+          </div>
+
+          <div class="set-field">
+            <span class="set-label">Mes paradoxes · notes concernées</span>
+            <div id="set-grades" class="note-chips" role="group" aria-label="Notes qui font un paradoxe"></div>
+            <p id="set-oddity-count" class="settings-help"></p>
+          </div>
+          <p id="set-status" class="settings-help settings-autosave"></p>
+        </details>
+      </main>
+
+      <div id="toast" class="toast" hidden></div>
+    </section>
+
+    <noscript>
+      <p class="noscript-msg">Orphée a besoin de JavaScript pour fonctionner.</p>
+    </noscript>
+  </body>
+</html>

@@ -1,0 +1,93 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'functions/**'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - 'storage.rules'
+      - 'firebase.json'
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      hosting: ${{ steps.filter.outputs.hosting }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            hosting:
+              - 'public/**'
+              - 'firebase.json'
+            backend:
+              - 'functions/**'
+              - 'firestore.rules'
+              - 'firestore.indexes.json'
+              - 'storage.rules'
+
+  deploy-hosting:
+    needs: changes
+    if: ${{ needs.changes.outputs.hosting == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # firebase-tools figé et mis en cache : ~40 s d'installation évitées.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.fbt
+          key: firebase-tools-15.33.0-${{ runner.os }}
+      - name: Install firebase-tools
+        run: |
+          [ -x ~/.fbt/bin/firebase ] || npm install -g --prefix ~/.fbt firebase-tools@15.33.0
+          echo "$HOME/.fbt/bin" >> "$GITHUB_PATH"
+
+      - name: Deploy hosting
+        run: firebase deploy --token "$FIREBASE_TOKEN" --project orphee-e7377 --non-interactive --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+  deploy-backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      # firebase-tools figé et mis en cache : ~40 s d'installation évitées.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.fbt
+          key: firebase-tools-15.33.0-${{ runner.os }}
+      - name: Install firebase-tools
+        run: |
+          [ -x ~/.fbt/bin/firebase ] || npm install -g --prefix ~/.fbt firebase-tools@15.33.0
+          echo "$HOME/.fbt/bin" >> "$GITHUB_PATH"
+
+      - name: Install Functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Lint + test
+        run: npm run lint && npm test
+        working-directory: functions
+
+      # --force : supprime sans demander les fonctions retirées du code
+      # (sinon le déploiement non interactif s'arrête).
+      - name: Deploy backend
+        run: firebase deploy --token "$FIREBASE_TOKEN" --project orphee-e7377 --non-interactive --force --only functions,firestore:rules,storage
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

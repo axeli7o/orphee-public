@@ -1,0 +1,285 @@
+/* ============================================================================
+   Orphée — Bibliothèque en bacs (lb-*, v2.11.0, ADR-039)
+   Écran fixe (comme le Salon) : rail des bacs en haut, pager horizontal
+   (un panneau par bac), chaque panneau défile verticalement.
+   ============================================================================ */
+
+#view-library.is-active {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  max-width: none;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* Les éléments masqués par l'attribut hidden le restent, même stylés en flex. */
+#view-library [hidden] { display: none !important; }
+
+/* ---- Rail des bacs : les noms glissent avec le doigt ---------------------- */
+.lb-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.lb-rail { position: relative; flex: 1; min-width: 0; height: 52px; overflow: hidden; }
+.lb-rail::before,
+.lb-rail::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 36px; z-index: 2; pointer-events: none;
+}
+.lb-rail::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+.lb-rail::after { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+.lb-rail-l {
+  position: absolute; left: 0; top: 4px; height: 44px;
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 6px 8px; border: 0; background: none; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-sans); font-size: 25px; font-weight: 800; letter-spacing: -0.02em; color: var(--text);
+  transform-origin: 50% 70%; will-change: transform, opacity;
+}
+.lb-rail-l .n { font-size: 12px; font-weight: 400; color: var(--dim); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.lb-rail-l .car { font-size: 13px; font-weight: 400; color: var(--muted); }
+.lb-search-btn {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: none; color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.lb-search-btn svg { width: 18px; height: 18px; }
+#view-library.searching .lb-search-btn { display: none; }
+
+.lb-search { display: flex; gap: 8px; align-items: center; padding: 8px 12px 8px 16px; flex: 0 0 auto; }
+.lb-search input {
+  flex: 1; min-width: 0; height: 42px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--accent); background: var(--surface-2); color: var(--text);
+  font-family: var(--font-sans); font-size: 16px; outline: none;
+}
+.lb-search-close { border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 8px 4px; }
+
+/* ---- Pager : un panneau par bac ------------------------------------------- */
+.lb-pager {
+  flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.lb-pager::-webkit-scrollbar { display: none; }
+/* Pas de height:100% ici : Safari ne résout pas un pourcentage sous un
+   conteneur dimensionné par flex. L'étirement (align-self) suffit partout. */
+.lb-panel {
+  position: relative; flex: 0 0 100%; align-self: stretch; min-height: 0; overflow: hidden;
+  scroll-snap-align: start; scroll-snap-stop: always;
+}
+.lb-status, .lb-empty { margin: 0; padding: 48px 24px; text-align: center; color: var(--muted); font-size: 15px; }
+
+/* ---- Mode Tranches (genres) ----------------------------------------------- */
+/* Pile de tranches (style « D2 », choisi au labo sur les vraies pochettes) :
+   chaque tranche est sombre, à peine teintée par sa pochette — un mur
+   régulier — et c'est la VIGNETTE nette qui fait reconnaître l'album.
+   Défilement natif libre ; tranches recyclées, placées en translateY ;
+   overflow-x hidden + overscroll limité au vertical : le glissement
+   horizontal remonte au pager (changer de bac). */
+.lb-spines {
+  position: absolute; inset: 0; padding-top: 8px;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: none;
+}
+.lb-spines::-webkit-scrollbar { display: none; }
+.lb-spines-in { position: relative; margin: 0 12px; }
+.lb-spine {
+  position: absolute; left: 0; right: 0; top: 0; height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 12px 0 11px; border: 0; border-radius: 3px; overflow: hidden;
+  text-align: left; cursor: pointer; will-change: transform;
+  font-family: var(--font-sans); color: #fff; background-color: var(--surface-2); isolation: isolate;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  -webkit-tap-highlight-color: transparent;
+}
+/* teinte d'ambiance : la pochette, floutée et assombrie, sous un voile.
+   v2.24.3 : le flou se calcule sur un calque quatre fois plus petit, agrandi
+   ensuite (×4) — même rendu au pixel près, ~16 fois moins de calcul. Le flou
+   de 30 px plein format coûtait à chaque tranche qui entre à l'écran :
+   mesuré sur téléphone simulé, 44 → 60 images/s en défilant une pile, 9 → 51
+   en glissant d'un bac à l'autre. */
+.lb-spine .bg {
+  position: absolute; z-index: 0; left: -30px; top: -40px;
+  width: calc((100% + 60px) / 4); height: calc((100% + 80px) / 4);
+  transform: scale(4); transform-origin: 0 0;
+  filter: blur(7.5px) saturate(0.8) brightness(0.42);
+}
+/* iPhone / iPad (Safari iOS) : trop de calques (un flou de 30 px par tranche
+   + promotion GPU) dépassent sa mémoire graphique et il abandonne le dessin
+   des tranches. Même teinte sans calque : la pochette agrandie (une seule
+   zone de couleur visible), ni flou ni translateZ. */
+@supports (-webkit-touch-callout: none) {
+  .lb-spine { will-change: auto; }
+  .lb-spine .bg {
+    inset: 0; width: auto; height: auto; transform: none; filter: saturate(0.8) brightness(0.42);
+    background-size: 1600% 1600% !important; background-position: center !important;
+  }
+}
+.lb-spine::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: rgba(12, 14, 13, 0.62); transition: background 0.12s ease;
+}
+/* retour au toucher : la tranche s'éclaire sous le doigt */
+.lb-spine:active::before { background: rgba(255, 255, 255, 0.1); }
+.lb-spine .notch { position: absolute; z-index: 2; left: 0; top: 0; bottom: 0; width: 3px; }
+.lb-spine .thumb {
+  position: relative; z-index: 2; flex: 0 0 auto; display: block;
+  width: 44px; height: 44px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.lb-spine .txt, .lb-spine .ls { position: relative; z-index: 2; }
+.lb-spine .txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lb-spine .al {
+  font-size: 17px; font-weight: 600; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lb-spine .ar {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.72;
+}
+.lb-spine .ls {
+  flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: rgba(0, 0, 0, 0.38); color: #fff;
+  font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+
+/* ---- Sélecteur de tri : trois pictos sous le pouce ------------------------
+   Discret (semi-transparent), sans mot ; le tri choisi est en accent. */
+.lb-sort {
+  position: absolute; right: 12px; bottom: 12px; z-index: 20;
+  display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+  background: rgba(20, 24, 21, 0.72); border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.lb-sort button {
+  width: 34px; height: 34px; border: 0; border-radius: 999px; background: none;
+  color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.lb-sort button svg { width: 22px; height: 22px; fill: currentColor; }
+.lb-sort button.on { color: var(--accent); background: var(--surface-2); }
+
+/* ---- Tous les bacs (feuille) ---------------------------------------------- */
+.lb-sheet-scrim { position: absolute; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.5); }
+.lb-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 31; max-height: 80%; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px; padding: 18px 16px 22px;
+  background: var(--surface); border-radius: 18px 18px 0 0; border-top: 1px solid var(--border);
+}
+.lb-sheet h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+.lb-sheet-grp { display: flex; flex-wrap: wrap; gap: 8px; }
+.lb-sheet-grp button {
+  display: inline-flex; gap: 6px; align-items: baseline; padding: 9px 14px;
+  border: 1px solid var(--border); border-radius: 999px; background: none; color: var(--text);
+  font-family: var(--font-sans); font-size: 15px; cursor: pointer;
+}
+.lb-sheet-grp button .n { font-size: 12px; color: var(--dim); }
+.lb-sheet-grp button.on { border-color: var(--accent); background: var(--surface-2); }
+
+/* Desktop : les bacs restent à taille de lecture, centrés. */
+@media (min-width: 900px) {
+  .lb-bar, .lb-search { width: 100%; max-width: 760px; margin: 0 auto; }
+  .lb-spines { left: 50%; right: auto; width: min(760px, 100%); transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-spine::before { transition: none; }
+}
+
+/* Bac « Mis de côté » (PM-35) : étoile d'envie forte, oubliés ternis. */
+.lb-spine .ls.star { color: #e0a23f; font-size: 16px; }
+.lb-spine.asleep { opacity: .45; }
+.lb-own-order .lb-sort { opacity: 0; pointer-events: none; transition: opacity .2s; }
+
+/* ---- Albums | Artistes (v2.40.0, PM-37) ----------------------------------- */
+/* Bascule « Albums | Artistes » et loupe (v2.43.3) : en bas à gauche, sous le
+   pouce, même pilule de verre que le tri ; l'onglet choisi en accent, comme
+   le tri actif. */
+.lb-mode {
+  position: absolute; left: 12px; bottom: 12px; z-index: 20;
+  display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px;
+  background: rgba(20, 24, 21, 0.72); border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.lb-mode .o-seg { padding: 0; background: none; }
+.lb-mode-seg > button { height: 34px; padding: 0 10px; font-size: 14px; }
+.lb-mode-seg > button.on { background: var(--surface-2); color: var(--accent); font-weight: 700; }
+.lb-mode .lb-search-btn { width: 36px; height: 34px; border: 0; border-radius: 999px; }
+#view-library.searching .lb-mode, .lb-sorting .lb-mode { display: none; }
+.lb-artists { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 120px; }
+.lb-sartists { flex: 0 0 auto; padding: 4px 0 6px; }
+.la { max-width: 720px; margin: 0 auto; }
+.la-blk { padding-top: 22px; }
+.la-blk + .la-blk { margin-top: 24px; border-top: 1px solid var(--border); }
+.la-h { margin: 0; font-size: var(--t-block, 19px); font-weight: 800; }
+.la-lede { margin: 4px 0 0; font-size: var(--t-sub, 13.5px); color: var(--muted); }
+.la-empty { padding-top: 22px; }
+.la-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 10px; margin-top: 16px; }
+@media (min-width: 700px) { .la-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.la-card { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: center; cursor: pointer; }
+.la-card b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-text, 15px); font-weight: 700; }
+.la-card small { font-size: var(--t-label, 12px); color: var(--muted); }
+.la-spark { display: block; height: 24px; }
+.la-spark svg { display: block; }
+.la-face {
+  --s: 84px; position: relative; width: var(--s); height: var(--s); flex: none; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; font-weight: 800; font-size: calc(var(--s) * .28); color: var(--text);
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--g) 38%, var(--surface-2)), var(--surface) 70%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--g) 55%, transparent);
+}
+.la-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.la-face::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--g) 70%, transparent); }
+.la-blk .moi-more { margin-top: 16px; }
+.la-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.la-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.la-chip::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--g); }
+.la-chip[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 0 0 1.5px var(--g); }
+.la-all { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 28px; padding: 16px 18px; border: 0; border-radius: 16px; background: var(--surface-2); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+.la-all .n { color: var(--muted); font-weight: 500; }
+.la-strip { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 4px; scrollbar-width: none; }
+.la-mini { flex: none; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.la-mini span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* « Ta musique » (v2.42.0) : un en-tête visage + courbe, puis ses titres. */
+.la-mine-head { display: flex; align-items: center; gap: 16px; width: 100%; margin-top: 16px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.la-mine-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.la-mine-txt b { font-size: var(--t-text, 15px); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.la-mine-txt small { font-size: var(--t-label, 12px); color: var(--muted); }
+.la-mine-tracks { margin-top: 12px; }
+
+/* ---- Mes CD (v2.43.0, PM-38) ------------------------------------------------
+   La galette dépasse de la vignette d'un album en CD (même disque que la
+   fiche album, en miniature). En mode « Trier mes CD », une coche remplace le
+   nombre d'écoutes et un bandeau remplace le sélecteur de tri. */
+.lb-spine .cd {
+  position: absolute; z-index: 2; left: 13px; top: 8px; width: 40px; height: 40px;
+  opacity: 0; transform: translateX(0) scale(.9);
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1), opacity .3s;
+}
+.lb-spine.is-cd .cd { opacity: 1; transform: translateX(45%) scale(.98); }
+/* Place pour la galette : les titres de toutes les tranches se décalent un
+   peu, pour rester alignés d'un album à l'autre (v2.43.2). */
+.lb-spine .txt { margin-left: 12px; }
+.lb-spine .thumb { z-index: 3; }
+.lb-spine .ck { display: none; }
+.lb-sorting .lb-spine .ls { display: none; }
+.lb-sorting .lb-spine .ck {
+  position: relative; z-index: 2; flex: none; display: block; width: 24px; height: 24px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .35);
+}
+.lb-sorting .lb-spine.is-cd .ck {
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.6 2.5L12 5.5' fill='none' stroke='%23062012' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 15px no-repeat;
+  box-shadow: none;
+}
+.lb-sort .lb-sort-cd { margin-left: 4px; box-shadow: inset 1px 0 0 var(--border); border-radius: 0 999px 999px 0; }
+.lb-sort .lb-sort-cd .cd-mini { width: 20px; height: 20px; }
+.lb-tri {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 12px 12px 16px; border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 10px 30px rgba(0, 0, 0, .45);
+}
+.lb-tri p { margin: 0; min-width: 0; font-size: 14px; line-height: 1.35; }
+.lb-tri b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.lb-tri small { font-size: 14px; color: var(--muted); }
+.lb-tri .o-btn { flex: none; }
+@media (prefers-reduced-motion: reduce) { .lb-spine .cd { transition: none; } }

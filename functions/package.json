@@ -1,0 +1,33 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test",
+    "gen-tags-doc": "node gen-tags-doc.js",
+    "gen-grades": "node gen-grades.js",
+    "gen-prompt": "node gen-prompt.js",
+    "gen": "node gen-tags-doc.js && node gen-grades.js && node gen-prompt.js",
+    "gen-check": "node gen-tags-doc.js --check && node gen-grades.js --check",
+    "serve": "npm run gen && firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "24"
+  },
+  "main": "src/index.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.4.1"
+  },
+  "private": true
+}
